@@ -15,6 +15,8 @@ log = logging.getLogger("access")
 
 MEMBER_TTL = 1800          # a'zolik javobini 30 daqiqa keshlaymiz
 _member_cache: dict[tuple[int, int], tuple[bool, float]] = {}
+TOUCH_EVERY = 60           # bir guruh/a'zoni bazaga ko'pi bilan daqiqada bir yozamiz
+_last_touch: dict[tuple[int, int | None], float] = {}
 ACTIVE_STATUSES = {"creator", "administrator", "member", "restricted"}
 
 VIS_LABEL = {
@@ -135,7 +137,14 @@ class ChatTracker(BaseMiddleware):
             break
         if chat is None or chat.type not in ("group", "supergroup"):
             return
-        await db.touch_chat(chat.id, chat.title or "", chat.type)
-        if user is not None and not user.is_bot:
-            await db.touch_chat_member(chat.id, user.id)
-            _member_cache[(chat.id, user.id)] = (True, time.monotonic())
+        uid = user.id if user is not None and not user.is_bot else None
+        now = time.monotonic()
+        if uid is not None:
+            _member_cache[(chat.id, uid)] = (True, now)
+        key = (chat.id, uid)
+        if now - _last_touch.get(key, -TOUCH_EVERY) < TOUCH_EVERY:
+            return
+        if len(_last_touch) > 50_000:
+            _last_touch.clear()
+        _last_touch[key] = now
+        await db.touch_group(chat.id, chat.title or "", chat.type, uid)

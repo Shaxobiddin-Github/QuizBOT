@@ -1,10 +1,12 @@
 """Klassik/jang testlari tugab, trafik tinchiguncha kutadi (restart uchun xavfsiz payt)."""
 import datetime
+import os
 import sqlite3
 import sys
 import time
+from pathlib import Path
 
-DB = "/home/shaxobiddin/BOTS/quizbot/data/quiz.db"
+DB = Path(__file__).resolve().parent / os.getenv("DB_PATH", "data/quiz.db")
 QUIET_SECONDS = int(sys.argv[1]) if len(sys.argv) > 1 else 40
 MAX_WAIT = int(sys.argv[2]) if len(sys.argv) > 2 else 1800
 STALE_MIN = 25          # bundan eski "faol" sessiya tashlab ketilgan hisoblanadi

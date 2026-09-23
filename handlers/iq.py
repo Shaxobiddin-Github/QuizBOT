@@ -1,54 +1,117 @@
-"""3-rejim: IQ test — vaqt cheklangan mantiqiy test."""
+"""3-rejim: IQ test — standartlashtirilgan testlar tuzilishi asosida.
+
+Tuzilishi (Raven SPM/APM va WAIS «Matrix Reasoning» uslubida):
+  * 30 ta savol, 30 daqiqa, osondan qiyinga;
+  * uchta kognitiv soha: vizual-fazoviy (rasmli matritsalar, figuralar),
+    son-miqdor va og'zaki-mantiqiy fikrlash;
+  * ball — IRT (3PL) modeli, deviatsion IQ (M=100, SD=15), persentil va
+    95% ishonch oralig'i bilan (`iq_score`).
+"""
 from __future__ import annotations
 
-import asyncio
-import contextlib
+import json
 import random
 from datetime import datetime, timedelta, timezone
 
 from aiogram import F, Router, types
-from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command
 
+import bg
 import db
+import iq_score
+import media
 import ui
 
 router = Router(name="iq")
 
-QUESTION_COUNT = 20
-TIME_LIMIT_MIN = 20
+QUESTION_COUNT = 30
+TIME_LIMIT_MIN = 30
 IQ_TITLE = "IQ test — mantiq va zakovat"
+
+# bo'lim -> nechta savol olinadi (jami QUESTION_COUNT)
+FORM = [
+    ("Matritsalar (Raven)", 12),
+    ("Figuralar ketma-ketligi", 3),
+    ("Ortiqcha figura", 3),
+    ("Sonlar ketma-ketligi", 4),
+    ("Harflar ketma-ketligi", 2),
+    ("Analogiya", 3),
+    ("Ortiqchasini top", 1),
+    ("Mantiqiy masala", 1),
+    ("Matematik mantiq", 1),
+]
+
+DOMAINS = {
+    "🔷 Vizual-fazoviy fikrlash": {"Matritsalar (Raven)", "Figuralar ketma-ketligi",
+                                  "Ortiqcha figura"},
+    "🔢 Son-miqdor mantiqi": {"Sonlar ketma-ketligi", "Matematik mantiq"},
+    "💬 Og'zaki-mantiqiy fikrlash": {"Analogiya", "Ortiqchasini top", "Harflar ketma-ketligi",
+                                    "Mantiqiy masala"},
+}
 
 RULES = (
     "🧩 <b>IQ test</b>\n\n"
-    f"• <b>{QUESTION_COUNT} ta savol</b> — oson savoldan qiyiniga qarab\n"
-    f"• <b>{TIME_LIMIT_MIN} daqiqa</b> umumiy vaqt\n"
+    f"• <b>{QUESTION_COUNT} ta savol</b>, <b>{TIME_LIMIT_MIN} daqiqa</b> — osondan qiyinga\n"
+    "• Rasmli matritsalar (Raven uslubi), figuralar ketma-ketligi, sonlar, "
+    "analogiya va mantiqiy masalalar\n"
     "• Savollar orasida erkin yurish mumkin, javobni o'zgartira olasiz\n"
-    "• To'g'ri javob test tugagunicha ko'rsatilmaydi\n"
-    "• Qiyinroq savol ko'proq ball keltiradi\n\n"
-    "<b>Bo'limlar:</b> sonlar ketma-ketligi, harflar, analogiya, "
-    "ortiqchasini top, mantiqiy masalalar, matematik mantiq\n\n"
-    "<i>⚠️ Natija — taxminiy ko'rsatkich. Bu rasmiy, standartlashtirilgan "
-    "IQ testi emas, o'zingizni sinab ko'rish uchun mo'ljallangan.</i>"
+    "• To'g'ri javob test tugagunicha ko'rsatilmaydi, javobsiz savol — xato\n\n"
+    "<b>Matritsa qanday yechiladi?</b> 3×3 jadvalda figuralar qator va ustun bo'yicha "
+    "qonuniyat bilan o'zgaradi (soni, shakli, bo'yog'i, o'lchami, yo'nalishi). "
+    "«?» o'rniga shu qonuniyatga mos variantni tanlang.\n\n"
+    "<b>Ball qanday hisoblanadi?</b> Xalqaro psixometriya standarti — IRT modeli: "
+    "qiyin savol ko'proq hissa qo'shadi, taxmin qilish ehtimoli hisobga olinadi. "
+    "Natija deviatsion IQ shkalasida (o'rtacha 100, SD 15), persentil va ishonch "
+    "oralig'i bilan beriladi.\n\n"
+    "<i>⚠️ Bu skrining (taxminiy) test. Rasmiy diagnostika faqat psixolog o'tkazadigan "
+    "standartlashtirilgan test (WAIS, Raven) orqali mumkin.</i>"
 )
-
-
-def grade_iq(score: int) -> tuple[str, str]:
-    if score >= 130:
-        return "Juda yuqori", "🌟"
-    if score >= 115:
-        return "Yuqori", "🏆"
-    if score >= 100:
-        return "O'rtachadan yuqori", "🥇"
-    if score >= 85:
-        return "O'rtacha", "🙂"
-    return "O'rtachadan past", "📘"
 
 
 async def iq_collection() -> int | None:
     row = await db.fetch_one(
         "SELECT id FROM collections WHERE COALESCE(kind,'quiz')='iq' ORDER BY id LIMIT 1")
     return row["id"] if row else None
+
+
+def _domain_of(category: str) -> str:
+    for name, cats in DOMAINS.items():
+        if category in cats:
+            return name
+    return "🧠 Boshqa"
+
+
+# ------------------------------------------------------------ savol tanlash
+def _stratified(items: list[dict], n: int, rng: random.Random) -> list[dict]:
+    """Qiyinlik darajalari bo'yicha navbatma-navbat olamiz — har daraja qamraladi."""
+    by_d: dict[int, list[dict]] = {}
+    for it in items:
+        by_d.setdefault(it["d"], []).append(it)
+    for lst in by_d.values():
+        rng.shuffle(lst)
+    out: list[dict] = []
+    levels = sorted(by_d)
+    while len(out) < n and any(by_d[d] for d in levels):
+        for d in levels:
+            if by_d[d] and len(out) < n:
+                out.append(by_d[d].pop())
+    return out
+
+
+def pick_form(rows: list[dict], rng: random.Random | None = None) -> list[int]:
+    rng = rng or random.Random()
+    pool = {r["id"]: r for r in rows}
+    picked: list[dict] = []
+    for cat, n in FORM:
+        chosen = _stratified([r for r in pool.values() if r["cat"] == cat], n, rng)
+        for r in chosen:
+            pool.pop(r["id"])
+        picked += chosen
+    if len(picked) < QUESTION_COUNT:
+        picked += _stratified(list(pool.values()), QUESTION_COUNT - len(picked), rng)
+    rng.shuffle(picked)
+    picked.sort(key=lambda r: r["d"])                     # osondan qiyinga
+    return [r["id"] for r in picked]
 
 
 # ------------------------------------------------------------------- boshlash
@@ -61,18 +124,27 @@ async def open_iq(message: types.Message) -> None:
     if not col_id or not await db.count_questions(col_id):
         await message.answer("🧩 IQ savollar bazasi hali tayyor emas.")
         return
-    best = await db.fetch_one(
-        """SELECT settings FROM sessions
-           WHERE owner_id=? AND mode='iq' AND status='done'
-           ORDER BY id DESC LIMIT 1""", (message.from_user.id,))
+    prev = await _last_result(message.from_user.id)
     extra = ""
-    if best:
-        import json
-        prev = json.loads(best["settings"]).get("result")
-        if prev:
-            extra = f"\n\n📌 Oxirgi natijangiz: <b>{prev}</b>"
+    if prev:
+        extra = f"\n\n📌 Oxirgi natijangiz: <b>IQ {prev['iq']}</b>"
+        if prev.get("ci"):
+            extra += f" (ishonch oralig'i {prev['ci'][0]}–{prev['ci'][1]})"
     await message.answer(RULES + extra,
                          reply_markup=ui.kb([[("▶️ Testni boshlash", "iq:go")]]))
+
+
+async def _last_result(user_id: int) -> dict | None:
+    row = await db.fetch_one(
+        """SELECT settings FROM sessions
+           WHERE owner_id=? AND mode='iq' AND status IN ('done','timeout')
+           ORDER BY id DESC LIMIT 1""", (user_id,))
+    if not row:
+        return None
+    res = json.loads(row["settings"] or "{}").get("result")
+    if isinstance(res, int):              # eski formatdagi natija
+        return {"iq": res}
+    return res
 
 
 @router.callback_query(F.data == "iq:go")
@@ -86,50 +158,32 @@ async def start_test(message: types.Message, user: types.User) -> None:
     if not col_id:
         return
     rows = await db.fetch_all(
-        "SELECT id, COALESCE(difficulty,2) AS d FROM questions WHERE collection_id=?",
-        (col_id,))
-    by_diff: dict[int, list[int]] = {}
-    for r in rows:
-        by_diff.setdefault(r["d"], []).append(r["id"])
-    for ids in by_diff.values():
-        random.shuffle(ids)
-
-    picked: list[int] = []
-    for d in sorted(by_diff):                       # osondan qiyinga
-        picked.extend(by_diff[d])
-    if len(picked) > QUESTION_COUNT:
-        # har darajadan proporsional olamiz, tartibi saqlanadi
-        step = len(picked) / QUESTION_COUNT
-        picked = [picked[int(i * step)] for i in range(QUESTION_COUNT)]
-
+        "SELECT id, COALESCE(difficulty,2) AS d, COALESCE(category,'') AS cat "
+        "FROM questions WHERE collection_id=?", (col_id,))
+    picked = pick_form([dict(r) for r in rows])
     questions = await db.questions_by_ids(picked)
     picked = [q for q in picked if q in questions]
-    perm = []
-    for qid in picked:
-        order = list(range(len(questions[qid]["options"])))
-        random.shuffle(order)
-        perm.append(order)
+    perm = [db.make_perm(questions[qid]) for qid in picked]
 
-    await db.abort_active(user.id)
+    from handlers import classic
+    await classic.stop_private(user.id)
     deadline = datetime.now(timezone.utc) + timedelta(minutes=TIME_LIMIT_MIN)
     settings = {"perm": perm, "deadline": deadline.isoformat(timespec="seconds"),
                 "minutes": TIME_LIMIT_MIN}
     sid = await db.create_session(user.id, message.chat.id, col_id, "iq", picked, settings)
-    text, markup = await render(sid, 0, user.id)
-    await message.answer(text, reply_markup=markup)
-    asyncio.create_task(_deadline_watch(message, sid, TIME_LIMIT_MIN * 60))
+    text, markup, photo = await render(message.bot, sid, 0, user.id)
+    await media.send(message.bot, message.chat.id, text, markup, photo)
+    bg.spawn(_deadline_watch(message.bot, message.chat.id, sid, TIME_LIMIT_MIN * 60))
 
 
-async def _deadline_watch(message: types.Message, sid: int, seconds: float) -> None:
-    with contextlib.suppress(asyncio.CancelledError):
-        await asyncio.sleep(seconds + 2)
-        session = await db.get_session(sid)
-        if session and session["status"] == "active":
-            await db.finish_session(sid, "timeout")
-            with contextlib.suppress(Exception):
-                await message.answer("⏰ <b>Vaqt tugadi!</b>",
-                                     reply_markup=ui.kb([[("📊 Natijani ko'rish",
-                                                           f"iq:res:{sid}")]]))
+async def _deadline_watch(bot, chat_id: int, sid: int, seconds: float) -> None:
+    import asyncio
+    await asyncio.sleep(seconds + 2)
+    session = await db.get_session(sid)
+    if session and session["status"] == "active":
+        await db.finish_session(sid, "timeout")
+        await bot.send_message(chat_id, "⏰ <b>Vaqt tugadi!</b>",
+                               reply_markup=ui.kb([[("📊 Natijani ko'rish", f"iq:res:{sid}")]]))
 
 
 # --------------------------------------------------------------------- render
@@ -138,10 +192,26 @@ def _left(session: dict) -> float:
     return (deadline - datetime.now(timezone.utc)).total_seconds()
 
 
-async def render(sid: int, index: int, user_id: int) -> tuple[str, types.InlineKeyboardMarkup]:
+def question_body(q: dict, shown: list[str], chosen: int | None = None,
+                  correct: int | None = None, reveal: bool = False) -> str:
+    """Savol matni + variantlar. Variantlar rasm bo'lsa — matn o'rniga izoh."""
+    limit = 600 if media.has_media(q) else 3000
+    text = f"<b>{ui.esc(ui.shorten(q['text'], limit))}</b>\n\n"
+    if media.has_option_images(q):
+        letters = ui.LETTERS[:len(shown)]
+        text += f"<i>🖼 Javob variantlari rasmda: {letters[0]}–{letters[-1]}</i>"
+        if chosen is not None:
+            text += f"\nTanlangan: <b>{ui.LETTERS[chosen]}</b>"
+        if reveal and correct is not None:
+            text += f"\nTo'g'ri javob: <b>{ui.LETTERS[correct]}</b>"
+        return text
+    return text + ui.render_options([ui.shorten(o, 200) for o in shown], chosen, correct, reveal)
+
+
+async def render(bot, sid: int, index: int, user_id: int):
     session = await db.get_session(sid)
     if not session:
-        return "Sessiya topilmadi.", ui.kb([[("🏠 Menyu", "pro:home")]])
+        return "Sessiya topilmadi.", ui.kb([[("🏠 Menyu", "pro:home")]]), None
     total = len(session["q_ids"])
     index = max(0, min(index, total - 1))
     q = await db.question(session["q_ids"][index])
@@ -157,8 +227,7 @@ async def render(sid: int, index: int, user_id: int) -> tuple[str, types.InlineK
             f"{ui.progress_bar(len(by_index), total)} javob berildi: {len(by_index)}"
             f"  ·  ⏳ <b>{ui.fmt_time(max(0, left))}</b>\n")
     body = (f"\n<i>{ui.esc(q['category'])} · {'⭐' * q['difficulty']}</i>\n"
-            f"<b>{ui.esc(q['text'])}</b>\n\n"
-            + ui.render_options(shown, chosen))
+            + question_body(q, shown, chosen))
 
     letters = [(ui.LETTERS[i] + (" 🔵" if chosen == i else ""),
                 f"iq:a:{sid}:{index}:{i}") for i in range(len(shown))]
@@ -171,18 +240,22 @@ async def render(sid: int, index: int, user_id: int) -> tuple[str, types.InlineK
         nav.append(("▶️", f"iq:g:{sid}:{index + 1}"))
     rows.append(nav)
     rows.append([(f"🏁 Yakunlash ({len(by_index)}/{total})", f"iq:fin:{sid}")])
-    return head + body, ui.kb(rows)
+    photo = await media.photo_for(bot, q)
+    return head + body, ui.kb(rows), photo
+
+
+async def _show(call: types.CallbackQuery, text: str, markup, photo=None) -> None:
+    await media.show(call.bot, call.message.chat.id, call.message, text, markup, photo)
 
 
 async def _edit(call: types.CallbackQuery, sid: int, index: int) -> None:
-    text, markup = await render(sid, index, call.from_user.id)
-    with contextlib.suppress(TelegramBadRequest):
-        await call.message.edit_text(text, reply_markup=markup)
+    text, markup, photo = await render(call.bot, sid, index, call.from_user.id)
+    await _show(call, text, markup, photo)
 
 
 async def _guard(call: types.CallbackQuery, sid: int) -> dict | None:
     session = await db.get_session(sid)
-    if not session:
+    if not session or session["mode"] != "iq":
         await call.answer("Sessiya topilmadi.", show_alert=True)
         return None
     if session["owner_id"] != call.from_user.id:
@@ -208,15 +281,21 @@ async def on_answer(call: types.CallbackQuery) -> None:
     session = await _guard(call, sid)
     if session is None:
         return
+    total = len(session["q_ids"])
+    if not 0 <= index < total:
+        await call.answer()
+        return
     q = await db.question(session["q_ids"][index])
     order = session["settings"]["perm"][index]
+    if not q or not 0 <= opt < len(order):
+        await call.answer()
+        return
     correct = order.index(q["correct"])
     await db.save_answer(sid, call.from_user.id, call.from_user.full_name,
                          index, q["id"], opt, opt == correct)
     await call.answer("Javob qabul qilindi")
 
     done = {r["q_index"] for r in await db.session_answers(sid, call.from_user.id)}
-    total = len(session["q_ids"])
     nxt = next((i for i in range(index + 1, total) if i not in done), None)
     if nxt is None:
         nxt = next((i for i in range(0, total) if i not in done), None)
@@ -255,11 +334,10 @@ async def on_map(call: types.CallbackQuery) -> None:
     if cur:
         rows.append(cur)
     rows.append([("↩️ Savolga qaytish", f"iq:g:{sid}:{session['cursor']}")])
-    with contextlib.suppress(TelegramBadRequest):
-        await call.message.edit_text(
-            f"🗺 <b>Savollar</b> — {len(done)}/{total} javob berildi\n"
-            f"⏳ Qolgan vaqt: <b>{ui.fmt_time(max(0, _left(session)))}</b>",
-            reply_markup=ui.kb(rows))
+    await _show(call,
+                f"🗺 <b>Savollar</b> — {len(done)}/{total} javob berildi\n"
+                f"⏳ Qolgan vaqt: <b>{ui.fmt_time(max(0, _left(session)))}</b>",
+                ui.kb(rows))
     await call.answer()
 
 
@@ -273,12 +351,12 @@ async def on_finish(call: types.CallbackQuery) -> None:
     total = len(session["q_ids"])
     done = len(await db.session_answers(sid, call.from_user.id))
     if session["status"] == "active" and done < total:
-        await call.message.edit_text(
-            f"🏁 <b>Testni yakunlaysizmi?</b>\n\n"
-            f"Javob berilgan: <b>{done}/{total}</b>\n"
-            f"Qolgan {total - done} ta savol xato hisoblanadi.",
-            reply_markup=ui.kb([[("✅ Ha, yakunlash", f"iq:fin2:{sid}")],
-                                [("↩️ Davom etish", f"iq:g:{sid}:{session['cursor']}")]]))
+        await _show(call,
+                    f"🏁 <b>Testni yakunlaysizmi?</b>\n\n"
+                    f"Javob berilgan: <b>{done}/{total}</b>\n"
+                    f"Qolgan {total - done} ta savol xato hisoblanadi.",
+                    ui.kb([[("✅ Ha, yakunlash", f"iq:fin2:{sid}")],
+                           [("↩️ Davom etish", f"iq:g:{sid}:{session['cursor']}")]]))
         await call.answer()
         return
     await _results(call, sid)
@@ -293,68 +371,85 @@ async def on_finish_do(call: types.CallbackQuery) -> None:
 
 
 # -------------------------------------------------------------------- natija
-async def _results(call: types.CallbackQuery, sid: int) -> None:
+def _pct_text(p: float) -> str:
+    if p >= 99.5:
+        return ">99"
+    if p < 0.5:
+        return "<1"
+    return str(round(p))
+
+
+async def compute(sid: int, user_id: int) -> tuple[iq_score.Report, dict, int, int]:
     session = await db.get_session(sid)
-    if not session or session["owner_id"] != call.from_user.id:
-        return
-    if session["status"] == "active":
-        await db.finish_session(sid)
-    uid = call.from_user.id
     q_ids = session["q_ids"]
     questions = await db.questions_by_ids(q_ids)
-    answers = {r["q_index"]: r for r in await db.session_answers(sid, uid)}
-
-    total_w = correct_w = 0
-    by_cat: dict[str, list[int]] = {}
-    n_correct = 0
+    answers = {r["q_index"]: r for r in await db.session_answers(sid, user_id)}
+    items, by_dom, n_correct = [], {}, 0
     for i, qid in enumerate(q_ids):
         q = questions.get(qid)
         if not q:
             continue
-        w = q["difficulty"]
-        total_w += w
-        cat = q["category"] or "Boshqa"
-        stat = by_cat.setdefault(cat, [0, 0])
+        ok = bool(answers.get(i) and answers[i]["is_correct"])
+        n_correct += ok
+        items.append(iq_score.Item(q["difficulty"], len(q["options"]), ok))
+        stat = by_dom.setdefault(_domain_of(q["category"]), [0, 0])
+        stat[0] += ok
         stat[1] += 1
-        row = answers.get(i)
-        if row and row["is_correct"]:
-            correct_w += w
-            n_correct += 1
-            stat[0] += 1
+    return iq_score.report(items), by_dom, n_correct, len(items)
 
-    raw = correct_w / total_w if total_w else 0
-    score = max(70, min(140, round(70 + raw * 70)))
-    label, emoji = grade_iq(score)
+
+async def _results(call: types.CallbackQuery, sid: int) -> None:
+    session = await db.get_session(sid)
+    if not session or session["owner_id"] != call.from_user.id or session["mode"] != "iq":
+        return
+    if session["status"] == "active":
+        await db.finish_session(sid)
+    uid = call.from_user.id
+    rep, by_dom, n_correct, total = await compute(sid, uid)
     started = datetime.fromisoformat(session["started_at"])
-    elapsed = (datetime.now(timezone.utc) - started).total_seconds()
+    finished = session.get("finished_at")
+    end = datetime.fromisoformat(finished) if finished else datetime.now(timezone.utc)
+    elapsed = min((end - started).total_seconds(), TIME_LIMIT_MIN * 60)
+    pct = _pct_text(rep.percentile)
 
     lines = [
         "🧩 <b>IQ test yakunlandi</b>\n",
-        f"{emoji} Taxminiy ko'rsatkich: <b>{score}</b>",
-        f"📈 Daraja: <b>{label}</b>",
-        f"{ui.progress_bar(round(raw * 100), 100, 16)}\n",
-        f"✅ To'g'ri javoblar: <b>{n_correct}/{len(q_ids)}</b>",
-        f"⚖️ Qiyinlik bo'yicha ball: <b>{correct_w}/{total_w}</b>",
+        f"{rep.emoji} IQ: <b>{rep.iq}</b>",
+        f"📏 95% ishonch oralig'i: <b>{rep.ci_low}–{rep.ci_high}</b>",
+        f"📈 Daraja: <b>{rep.label}</b> <i>(WAIS-IV tasnifi)</i>",
+        f"👥 Persentil: <b>{pct}</b> — natijangiz odamlarning taxminan {pct}% idan yuqori",
+        f"{ui.progress_bar(round(rep.percentile), 100, 16)}\n",
+        f"✅ To'g'ri javoblar: <b>{n_correct}/{total}</b>",
         f"⏱ Sarflangan vaqt: <b>{ui.fmt_time(elapsed)}</b>\n",
-        "<b>Bo'limlar bo'yicha:</b>",
+        "<b>Sohalar bo'yicha:</b>",
     ]
-    for cat, (ok, tot) in sorted(by_cat.items(), key=lambda x: -x[1][1]):
-        bar = ui.progress_bar(ok, tot, 6)
-        lines.append(f"• {ui.esc(cat)} — {bar} {ok}/{tot}")
-    lines.append("\n<i>⚠️ Bu taxminiy ko'rsatkich. Rasmiy, standartlashtirilgan "
-                 "IQ testi emas — o'zingizni sinash uchun mo'ljallangan.</i>")
+    for dom, (ok, tot) in by_dom.items():
+        lines.append(f"{dom} — {ui.progress_bar(ok, tot, 6)} {ok}/{tot}")
 
-    import json
+    earlier = await db.fetch_one(
+        """SELECT COUNT(*) AS n FROM sessions WHERE owner_id=? AND mode='iq'
+           AND status IN ('done','timeout') AND id<?""", (uid, sid))
+    if earlier and earlier["n"]:
+        lines.append("\n<i>🔁 Testni qayta topshirganda «mashq effekti» natijani biroz "
+                     "oshirishi mumkin — birinchi urinish eng ishonchlisi.</i>")
+    lines.append("\n<i>ℹ️ Hisob: IRT (3PL) modeli, deviatsion IQ shkalasi (o'rtacha 100, "
+                 "SD 15). Bu skrining natijasi — rasmiy diagnostika uchun psixolog "
+                 "o'tkazadigan standartlashtirilgan test (WAIS, Raven) zarur.</i>")
+
     settings = dict(session["settings"])
-    settings["result"] = score
+    settings["result"] = {"iq": rep.iq, "ci": [rep.ci_low, rep.ci_high],
+                          "percentile": round(rep.percentile, 1), "correct": n_correct}
     await db.execute("UPDATE sessions SET settings=? WHERE id=?",
                      (json.dumps(settings, ensure_ascii=False), sid))
 
-    with contextlib.suppress(TelegramBadRequest):
-        await call.message.edit_text("\n".join(lines), reply_markup=ui.kb([
-            [("🔍 Javoblar tahlili", f"iq:rev:{sid}:0")],
-            [("🔁 Qayta urinish", "iq:go"), ("🏠 Menyu", "pro:home")],
-        ]))
+    await _show(call, "\n".join(lines), ui.kb([
+        [("🔍 Javoblar tahlili", f"iq:rev:{sid}:0")],
+        [("🔁 Qayta urinish", "iq:go"), ("🏠 Menyu", "pro:home")],
+    ]))
+
+
+# ------------------------------------------------------------------- tahlil
+REVIEW_PER_PAGE = 5
 
 
 @router.callback_query(F.data.startswith("iq:rev:"))
@@ -362,17 +457,18 @@ async def on_review(call: types.CallbackQuery) -> None:
     _, _, sid, page = call.data.split(":")
     sid, page = int(sid), int(page)
     session = await db.get_session(sid)
-    if not session or session["owner_id"] != call.from_user.id:
+    if not session or session["owner_id"] != call.from_user.id or session["status"] == "active":
         await call.answer()
         return
     q_ids = session["q_ids"]
     questions = await db.questions_by_ids(q_ids)
     answers = {r["q_index"]: r for r in await db.session_answers(sid, call.from_user.id)}
 
-    per = 4
+    per = REVIEW_PER_PAGE
     pages = (len(q_ids) + per - 1) // per
     page = max(0, min(page, pages - 1))
     out = [f"🔍 <b>Javoblar tahlili</b> (sahifa {page + 1}/{pages})\n"]
+    see = []
     for i in range(page * per, min((page + 1) * per, len(q_ids))):
         q = questions.get(q_ids[i])
         if not q:
@@ -382,22 +478,58 @@ async def on_review(call: types.CallbackQuery) -> None:
         correct = order.index(q["correct"])
         row = answers.get(i)
         icon = "✅" if row and row["is_correct"] else ("❌" if row else "⏭")
-        out.append(f"{icon} <b>{i + 1}.</b> {ui.esc(q['text'])}")
-        if row and not row["is_correct"] and 0 <= row["chosen"] < len(shown):
-            out.append(f"   ✗ Siz: <i>{ui.esc(shown[row['chosen']])}</i>")
-        out.append(f"   ✓ To'g'ri: <b>{ui.esc(shown[correct])}</b>")
-        if q["explanation"]:
-            out.append(f"   💡 <i>{ui.esc(q['explanation'])}</i>")
-        out.append("")
+        pic = "🖼 " if media.has_media(q) else ""
+        out.append(f"{icon} <b>{i + 1}.</b> {pic}{ui.esc(ui.shorten(q['text'], 160))}")
 
+        def label(k: int) -> str:
+            return ui.LETTERS[k] if media.has_option_images(q) else ui.esc(shown[k])
+
+        if row and not row["is_correct"] and 0 <= row["chosen"] < len(shown):
+            out.append(f"   ✗ Siz: <i>{label(row['chosen'])}</i>")
+        out.append(f"   ✓ To'g'ri: <b>{label(correct)}</b>")
+        if q["explanation"]:
+            out.append(f"   💡 <i>{ui.esc(ui.shorten(q['explanation'], 300))}</i>")
+        out.append("")
+        if media.has_media(q):
+            see.append((f"🖼 {i + 1}", f"iq:see:{sid}:{i}"))
+
+    keyboard = [see[k:k + 5] for k in range(0, len(see), 5)]
     nav = []
     if page > 0:
         nav.append(("⬅️", f"iq:rev:{sid}:{page - 1}"))
     if page < pages - 1:
         nav.append(("➡️", f"iq:rev:{sid}:{page + 1}"))
-    keyboard = [nav] if nav else []
+    if nav:
+        keyboard.append(nav)
     keyboard.append([("📊 Natijaga qaytish", f"iq:res:{sid}")])
-    body = "\n".join(out)
-    with contextlib.suppress(TelegramBadRequest):
-        await call.message.edit_text(body[:4000], reply_markup=ui.kb(keyboard))
+    await _show(call, "\n".join(out)[:4000], ui.kb(keyboard))
+    await call.answer()
+
+
+@router.callback_query(F.data.startswith("iq:see:"))
+async def on_see(call: types.CallbackQuery) -> None:
+    """Tahlilda rasmli savolni to'g'ri javobi bilan ko'rsatish."""
+    _, _, sid, index = call.data.split(":")
+    sid, index = int(sid), int(index)
+    session = await db.get_session(sid)
+    if not session or session["owner_id"] != call.from_user.id or session["status"] == "active":
+        await call.answer()
+        return
+    if not 0 <= index < len(session["q_ids"]):
+        await call.answer()
+        return
+    q = await db.question(session["q_ids"][index])
+    order = session["settings"]["perm"][index]
+    shown = [q["options"][i] for i in order]
+    correct = order.index(q["correct"])
+    row = next((r for r in await db.session_answers(sid, call.from_user.id)
+                if r["q_index"] == index), None)
+    chosen = row["chosen"] if row else None
+    text = (f"<b>{index + 1}-savol</b> · <i>{ui.esc(q['category'])} · {'⭐' * q['difficulty']}</i>\n"
+            + question_body(q, shown, chosen, correct, reveal=True))
+    if q["explanation"]:
+        text += f"\n\n💡 <i>{ui.esc(ui.shorten(q['explanation'], 400))}</i>"
+    page = index // REVIEW_PER_PAGE
+    await _show(call, text, ui.kb([[("⬅️ Tahlilga qaytish", f"iq:rev:{sid}:{page}")]]),
+                await media.photo_for(call.bot, q))
     await call.answer()

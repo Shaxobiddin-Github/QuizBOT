@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from aiogram import Bot, Dispatcher, types
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.methods import (SendMessage, EditMessageText, EditMessageReplyMarkup,
                              AnswerCallbackQuery, SendPoll, GetMe, SetMyCommands,
@@ -15,6 +16,8 @@ _polls = itertools.count(5000)
 
 OWNERS = {101}          # guruh egasi deb hisoblanadigan foydalanuvchilar
 MEMBERS: dict = {}      # chat_id -> a'zolar to'plami (yo'q bo'lsa — hamma a'zo)
+PHOTO_MSGS: set = set()   # rasmli xabarlar id'lari
+DELETED: set = set()
 
 ME = types.User(id=8651732102, is_bot=True, first_name="quizbotuz",
                 username="quizbot_uzbot_bot")
@@ -45,13 +48,20 @@ class FakeSession:
     async def close(self):
         pass
 
-    def _msg(self, cid, text, markup=None, poll=None, bot=None):
-        mid = next(_ids)
+    def _msg(self, cid, text, markup=None, poll=None, bot=None, photo=False, mid=None):
+        mid = mid or next(_ids)
         self.messages[mid] = text
+        extra = {}
+        if photo:
+            PHOTO_MSGS.add(mid)
+            extra = {"photo": [types.PhotoSize(file_id=f"ph{mid}", file_unique_id=f"u{mid}",
+                                               width=800, height=800)],
+                     "caption": text}
         msg = types.Message(
             message_id=mid, date=NOW, chat=chat(cid), from_user=ME,
-            text=text if poll is None else None, poll=poll,
+            text=text if poll is None and not photo else None, poll=poll,
             reply_markup=markup if isinstance(markup, types.InlineKeyboardMarkup) else None,
+            **extra,
         )
         return msg.as_(bot) if bot is not None else msg
 
@@ -67,7 +77,26 @@ class FakeSession:
             return types.MessageId(message_id=next(_ids))
         if name == "SendDocument":
             return self._msg(m.chat_id, m.caption or "<document>", bot=bot)
+        if name == "SendPhoto":
+            return self._msg(m.chat_id, m.caption or "", m.reply_markup, bot=bot, photo=True)
+        if name == "EditMessageMedia":
+            if m.message_id not in PHOTO_MSGS:
+                raise TelegramBadRequest(method=m, message="Bad Request: message has no media")
+            return self._msg(m.chat_id, m.media.caption or "", m.reply_markup, bot=bot,
+                             photo=True, mid=m.message_id)
+        if name == "EditMessageCaption":
+            if m.message_id not in PHOTO_MSGS:
+                raise TelegramBadRequest(method=m, message="Bad Request: message has no caption")
+            self.messages[m.message_id] = m.caption
+            return True
+        if name == "DeleteMessage":
+            PHOTO_MSGS.discard(m.message_id)
+            DELETED.add(m.message_id)
+            return True
         if name in ("EditMessageText",):
+            if m.message_id in PHOTO_MSGS:
+                raise TelegramBadRequest(
+                    method=m, message="Bad Request: there is no text in the message to edit")
             self.messages[m.message_id] = m.text
             return types.Message(message_id=m.message_id, date=NOW,
                                  chat=chat(m.chat_id), from_user=ME, text=m.text,
@@ -118,18 +147,25 @@ def upd_my_chat_member(c, u, status="member"):
         new_chat_member=types.ChatMemberMember(user=ME, status=status)))
 
 
-def upd_message(text, u, c, mid=None, document=None):
+def upd_message(text, u, c, mid=None, document=None, photo=None):
+    media_msg = document is not None or photo is not None
     return types.Update(update_id=next(_ids), message=types.Message(
         message_id=mid or next(_ids), date=NOW, chat=c, from_user=u,
-        text=text if document is None else None, document=document,
+        text=text if not media_msg else None, document=document,
+        photo=photo, caption=text if photo is not None else None,
         entities=[types.MessageEntity(type="bot_command", offset=0,
                                       length=len(text.split()[0]))]
-        if text and text.startswith("/") else None))
+        if text and text.startswith("/") and not media_msg else None))
 
 
 def upd_call(data, u, c, msg_id=None, msg_text="x"):
-    msg = types.Message(message_id=msg_id or next(_ids), date=NOW, chat=c,
-                        from_user=ME, text=msg_text)
+    mid = msg_id or next(_ids)
+    if mid in PHOTO_MSGS:
+        msg = types.Message(message_id=mid, date=NOW, chat=c, from_user=ME, caption=msg_text,
+                            photo=[types.PhotoSize(file_id=f"ph{mid}", file_unique_id=f"u{mid}",
+                                                   width=800, height=800)])
+    else:
+        msg = types.Message(message_id=mid, date=NOW, chat=c, from_user=ME, text=msg_text)
     return types.Update(update_id=next(_ids), callback_query=types.CallbackQuery(
         id=str(next(_ids)), from_user=u, chat_instance="ci", data=data, message=msg))
 

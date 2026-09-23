@@ -6,18 +6,50 @@
 
 | | 🎯 Klassik | 🧠 Pro | 🧩 IQ test |
 |---|---|---|---|
-| Shaxsiy chat | Telegram quiz-poll, taymer, avtomatik keyingi savol | Bitta xabar ichida navigatsiya, 50:50, «o'rgandim», xatolar tahlili | Vaqt cheklangan mantiq testi, qiyinlikka qarab ball |
+| Shaxsiy chat | Telegram quiz-poll, taymer, avtomatik keyingi savol | Bitta xabar ichida navigatsiya, 50:50, «o'rgandim», xatolar tahlili | Rasmli matritsalar (Raven), IRT asosidagi deviatsion IQ |
 | Guruh | Hamma poll'ga javob beradi, oxirida reyting | **Pro jang** — hamma bir vaqtda javob beradi, tezlik uchun bonus ball | — |
 
 ## 🧩 IQ test
 
-Uchinchi rejim — vaqt cheklangan mantiqiy test. 20 ta savol, 20 daqiqa, osondan
-qiyiniga. Bo'limlar: sonlar ketma-ketligi, harflar, analogiya, ortiqchasini top,
-mantiqiy masalalar, matematik mantiq (jami 52 ta savol bazada).
+Standartlashtirilgan testlar (Raven SPM/APM, WAIS «Matrix Reasoning») tuzilishida:
 
-Ball qiyinlik darajasiga qarab tortiladi (`⭐1`–`⭐4`), natija 70–140 oralig'idagi
-**taxminiy ko'rsatkich**ga aylantiriladi va bo'limlar bo'yicha tahlil beriladi.
-Natija sahifasida ochiq yozilgan: bu standartlashtirilgan IQ testi emas.
+* **30 ta savol, 30 daqiqa**, osondan qiyiniga (qiyinlik ⭐1–⭐5);
+* **12 ta rasmli matritsa** (3×3, «?» o'rniga mos figurani topish), figuralar
+  ketma-ketligi, «ortiqcha figura», sonlar/harflar ketma-ketligi, analogiya,
+  mantiqiy masalalar;
+* uch kognitiv soha bo'yicha tahlil: vizual-fazoviy, son-miqdor, og'zaki-mantiqiy.
+
+**Hisoblash** (`iq_score.py`): har savol IRT 3PL modeli bilan baholanadi
+(qiyinlik b, ajratish a, taxmin ehtimoli c = 1/variantlar), qobiliyat θ EAP
+usulida topiladi va **deviatsion IQ = 100 + 15·θ** (M=100, SD=15) ga
+aylantiriladi. Natijada 95% ishonch oralig'i, persentil va WAIS-IV tasnifi
+beriladi. Bot natijani ochiq yozadi: bu skrining test, klinik diagnostika emas —
+normalar reprezentativ tanlanmadan emas, model parametrlaridan olingan.
+
+**Rasmli savollar** (`iq_gen.py`) qat'iy seed bilan generatsiya qilinadi:
+50 ta matritsa (har darajada 10 ta), 12 ta ketma-ketlik, 9 ta ortiqcha figura.
+Qoidalar: son progressiyasi, «uchtadan taqsimlash» (lotin kvadrati), qatorda
+doimiylik, burilish, qo'shish; noto'g'ri variantlar APM uslubida — to'g'ri
+javobdan bitta-ikkita belgisi bilan farq qiladi. Rasmlar `data/media/iq/` ga
+bir marta yoziladi, Telegram `file_id` keshlanadi.
+
+## 🖼 Rasmli savollar
+
+Savolda ham, javob variantlarida ham rasm bo'lishi mumkin — barcha rejimlarda
+(Pro, Klassik, guruh jangi, IQ). Variantlari rasm bo'lsa, bot savol rasmi va
+harflangan variantlarni bitta rasmga birlashtiradi, tugmalar A, B, C… bo'ladi.
+
+Qo'shish usullari:
+
+* **Rasm + izoh**: «➕ Savol qo'shish» → bazani tanlang → rasm yuboring, izohiga
+  savol va variantlarni yozing (`+` to'g'ri javob).
+* **ZIP**: ichida bitta `.json` va rasmlar:
+  ```json
+  [{"question": "Qaysi figura mos?", "image": "img/1.png",
+    "option_images": ["img/a.png", "img/b.png", "img/c.png"], "answer": "B"}]
+  ```
+* **JSON** ichida `https://` havola — bot rasmni import paytida yuklab oladi
+  (ichki tarmoq manzillari rad etiladi).
 
 ## 🔐 Ruxsatlar
 
@@ -54,7 +86,7 @@ ro'yxatdan o'tgan foydalanuvchi admin bo'ladi. O'z ID'ingizni bilish: `/id`.
 ./bot-ctl.sh stop       # to'xtatish
 ./bot-ctl.sh restart    # qayta ishga tushirish
 ./bot-ctl.sh log        # jonli log
-./bot-ctl.sh test       # 100 ta integratsion test
+./bot-ctl.sh test       # 140+ integratsion test
 ```
 
 Bot **cron** nazorati ostida: har daqiqada tekshiriladi, o'chib qolsa
@@ -63,8 +95,8 @@ avtomatik ishga tushadi. `flock` ikkinchi nusxa ishga tushishiga yo'l qo'ymaydi.
 
 ```
 crontab -l
-@reboot /home/shaxobiddin/BOTS/quizbot/keepalive.sh
-* * * * * /home/shaxobiddin/BOTS/quizbot/keepalive.sh
+@reboot /LOYIHA/PAPKASI/keepalive.sh
+* * * * * /LOYIHA/PAPKASI/keepalive.sh
 ```
 
 Nazoratni butunlay o'chirish: `crontab -e` → ikkala qatorni o'chiring.
@@ -97,6 +129,10 @@ va bot bu haqda ogohlantiradi. Import qilishdan oldin namuna ko'rsatiladi.
 
 ```
 bot.py            ishga tushirish nuqtasi
+iq_gen.py         rasmli IQ savollari generatori (Raven matritsalari)
+iq_score.py       IQ hisobi: IRT 3PL, EAP, deviatsion IQ
+media.py          rasmlar: birlashtirish, file_id keshi, xabarni almashtirish
+bg.py             fon vazifalari
 config.py         sozlamalar (.env dan o'qiydi)
 db.py             SQLite (umumiy baza)
 importers.py      JSON / DOCX / TXT parserlari
@@ -114,7 +150,8 @@ handlers/
 access.py         kirish huquqi, guruh a'zoligi keshi
 data/quiz.db      baza
 data/default_questions.json   197 ta test savoli
-data/iq_questions.json        52 ta IQ savoli
+data/iq_questions.json        52 ta matnli IQ savoli
+data/media/       rasmlar (generatsiya qilingan va yuklangan; git'ga kirmaydi)
 tests/            integratsion testlar (soxta Telegram API)
 ```
 

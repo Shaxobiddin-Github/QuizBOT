@@ -43,7 +43,7 @@ case "${1:-status}" in
       tail -f "$DIR/bot.log" ;;
   test)
       T=$(mktemp -d)
-      ADMINS= DB_PATH="$T/test.db" "$DIR/venv/bin/python" -u "$DIR/tests/test_bot.py"
+      ADMINS= DB_PATH="$T/test.db" MEDIA_DIR="$T/media" "$DIR/venv/bin/python" -u "$DIR/tests/test_bot.py"
       rc=$?; rm -rf "$T"; exit $rc ;;
   *)
       echo "Foydalanish: $0 {start|stop|restart|status|log|test}" ;;

@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import io
 import json
+import posixpath
 import re
+import zipfile
 from dataclasses import dataclass, field
 
 MIN_OPTIONS = 2
@@ -20,6 +22,8 @@ class ImportResult:
     questions: list[dict] = field(default_factory=list)
     skipped: int = 0
     notes: list[str] = field(default_factory=list)
+    # ZIP ichidagi rasmlar: "zip://<nom>" -> bayt (saqlashdan oldin diskka yoziladi)
+    files: dict[str, bytes] = field(default_factory=dict)
 
     @property
     def count(self) -> int:
@@ -32,8 +36,33 @@ def _clean(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+IMAGE_HINT = "Rasmga qarang va to'g'ri javobni tanlang."
+
+
+def _normalize_images(text: str, options: list[str], correct: int, explanation: str,
+                      extra: dict) -> dict | None:
+    """Variantlari rasm bo'lgan savol: variant matni ixtiyoriy, tartib saqlanadi."""
+    images = [str(x).strip() for x in extra["option_images"]]
+    n = len(images)
+    if n < MIN_OPTIONS or n > MAX_OPTIONS or any(not x for x in images):
+        return None
+    if not 0 <= correct < n:
+        return None
+    opts = ([_clean(str(o)) for o in options] + [""] * n)[:n]
+    item = {"text": (_clean(text) or IMAGE_HINT)[:1000], "options": opts, "correct": correct,
+            "explanation": _clean(explanation)[:500], "option_images": images}
+    for key in ("difficulty", "category", "image"):
+        if extra.get(key) not in (None, ""):
+            item[key] = extra[key]
+    return item
+
+
 def _normalize(text: str, options: list[str], correct: int,
                explanation: str = "", extra: dict | None = None) -> dict | None:
+    if extra and extra.get("option_images"):
+        return _normalize_images(text, options, correct, explanation, extra)
+    if extra and extra.get("image") and not _clean(text):
+        text = IMAGE_HINT
     text = _clean(text)
     opts, seen = [], set()
     correct_value = options[correct] if 0 <= correct < len(options) else None
@@ -102,34 +131,45 @@ def _json_item(item) -> dict | None:
         return None
     lower = {str(k).lower(): v for k, v in item.items()}
 
+    image = _first(lower, ["image", "img", "rasm", "photo", "picture"])
+    image = str(image).strip() if isinstance(image, str) else ""
+    opt_images = _first(lower, ["option_images", "options_images", "images", "rasmlar",
+                                "variant_rasmlari"])
+    opt_images = [str(x) for x in opt_images] if isinstance(opt_images, list) else []
     text = _first(lower, ["q", "question", "text", "savol", "title", "name"])
-    if not text:
+    if not text and not (image or opt_images):
         return None
+    text = str(text or "")
     explanation = _first(lower, ["explanation", "izoh", "comment", "note"]) or ""
+    extra = {"difficulty": lower.get("difficulty") or lower.get("daraja"),
+             "category": lower.get("category") or lower.get("bolim"),
+             "image": image, "option_images": opt_images}
 
     # 1-shakl: {"q":..., "c": to'g'ri, "a": [xatolar]}  (artifact shakli)
     correct_val = _first(lower, ["c", "correct_answer", "answer_text", "to'g'ri", "togri"])
     wrong = _first(lower, ["a", "wrong", "incorrect", "distractors", "xato"])
-    if correct_val is not None and isinstance(wrong, list):
+    if correct_val is not None and isinstance(wrong, list) and not opt_images:
         options = [str(correct_val)] + [str(w) for w in wrong]
-        return _normalize(str(text), options, 0, str(explanation))
+        return _normalize(text, options, 0, str(explanation), extra)
 
     # 2-shakl: {"question":..., "options":[...], "answer": index yoki matn}
     options = _first(lower, ["options", "variants", "answers", "choices", "variantlar"])
+    if not (isinstance(options, list) and options) and opt_images:
+        options = [""] * len(opt_images)
     if isinstance(options, list) and options:
         if options and isinstance(options[0], dict):
-            texts, correct = [], 0
+            texts, imgs, correct = [], [], 0
             for i, o in enumerate(options):
                 ol = {str(k).lower(): v for k, v in o.items()}
                 texts.append(str(_first(ol, ["text", "title", "value", "option"]) or ""))
+                imgs.append(str(_first(ol, ["image", "img", "rasm", "photo"]) or ""))
                 if ol.get("correct") or ol.get("is_correct") or ol.get("right"):
                     correct = i
-            return _normalize(str(text), texts, correct, str(explanation))
+            if any(imgs):
+                extra["option_images"] = imgs
+            return _normalize(text, texts, correct, str(explanation), extra)
 
         options = [str(o) for o in options]
-        extra = {"difficulty": lower.get("difficulty") or lower.get("daraja"),
-                 "category": lower.get("category") or lower.get("bolim"),
-                 "image": lower.get("image")}
         ans = _first(lower, ["answer", "correct", "correct_option_id", "correct_index",
                              "javob", "right"])
         correct = 0
@@ -148,7 +188,7 @@ def _json_item(item) -> dict | None:
                            if _clean(o).lower() == _clean(s).lower()]
                 correct = matches[0] if matches else 0
         correct = max(0, min(correct, len(options) - 1))
-        return _normalize(str(text), options, correct, str(explanation), extra)
+        return _normalize(text, options, correct, str(explanation), extra)
     return None
 
 
@@ -361,11 +401,81 @@ def _parse_blocks(lines: list[str]) -> ImportResult:
     return res
 
 
+# ------------------------------------------------------------------------ ZIP
+ZIP_MAX_TOTAL = 100 * 1024 * 1024       # ochilgan hajm chegarasi (zip-bomb himoyasi)
+ZIP_MAX_FILES = 3000
+IMAGE_EXT = (".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp")
+
+
+def parse_zip(raw: bytes) -> ImportResult:
+    """ZIP: bitta .json + rasmlar. JSON ichida rasmga fayl nomi bilan murojaat
+    qilinadi: "image": "rasmlar/1.png", "option_images": ["a.png", "b.png"]."""
+    try:
+        zf = zipfile.ZipFile(io.BytesIO(raw))
+    except zipfile.BadZipFile as exc:
+        raise ImportError_("ZIP arxiv o'qilmadi.") from exc
+    infos = [i for i in zf.infolist() if not i.is_dir() and "__MACOSX" not in i.filename]
+    if len(infos) > ZIP_MAX_FILES or sum(i.file_size for i in infos) > ZIP_MAX_TOTAL:
+        raise ImportError_("ZIP arxiv juda katta (ko'pi bilan 100 MB, 3000 fayl).")
+    jsons = sorted((i for i in infos if i.filename.lower().endswith(".json")),
+                   key=lambda i: i.filename.count("/"))
+    if not jsons:
+        raise ImportError_("ZIP ichida savollar yozilgan .json fayl topilmadi.")
+    res = parse_json(zf.read(jsons[0]))
+    base = posixpath.dirname(jsons[0].filename)
+    members = {i.filename: i for i in infos if i.filename.lower().endswith(IMAGE_EXT)}
+    by_name: dict[str, str] = {}
+    for name in members:
+        by_name.setdefault(posixpath.basename(name).lower(), name)
+
+    def resolve(ref: str) -> str | None:
+        if not ref or ref.startswith(("http://", "https://")):
+            return ref
+        clean = ref.lstrip("./")
+        for cand in (posixpath.normpath(posixpath.join(base, clean)), clean):
+            if cand in members:
+                return cand
+        return by_name.get(posixpath.basename(clean).lower())
+
+    kept, missing = [], 0
+    for q in res.questions:
+        refs = ([q["image"]] if q.get("image") else []) + list(q.get("option_images") or [])
+        found = {r: resolve(r) for r in refs}
+        if any(v is None for v in found.values()):
+            missing += 1
+            continue
+        for ref, member in found.items():
+            if member and not member.startswith(("http://", "https://")):
+                res.files["zip://" + member] = zf.read(members[member])
+        if q.get("image") and found[q["image"]] and not is_url(q["image"]):
+            q["image"] = "zip://" + found[q["image"]]
+        if q.get("option_images"):
+            q["option_images"] = [r if is_url(r) else "zip://" + found[r]
+                                  for r in q["option_images"]]
+        kept.append(q)
+    res.questions = kept
+    res.skipped += missing
+    if missing:
+        res.notes.append(f"⚠️ {missing} ta savolning rasmi arxivda topilmadi — o'tkazib yuborildi.")
+    if not res.questions:
+        raise ImportError_("ZIP dagi savollarning rasmlari topilmadi.")
+    n_img = sum(1 for q in res.questions if q.get("image") or q.get("option_images"))
+    if n_img:
+        res.notes.append(f"🖼 Rasmli savollar: {n_img} ta.")
+    return res
+
+
+def is_url(ref: str) -> bool:
+    return ref.startswith(("http://", "https://"))
+
+
 # ------------------------------------------------------------------ dispatcher
 def parse_file(filename: str, raw: bytes) -> ImportResult:
     name = (filename or "").lower()
     if name.endswith(".json"):
         return parse_json(raw)
+    if name.endswith(".zip"):
+        return parse_zip(raw)
     if name.endswith(".docx"):
         return parse_docx(raw)
     if name.endswith((".txt", ".md")):
@@ -374,7 +484,7 @@ def parse_file(filename: str, raw: bytes) -> ImportResult:
         raise ImportError_(
             "Eski .doc formati qo'llab-quvvatlanmaydi.\n"
             "Word'da «Save as → .docx» qilib qayta yuboring.")
-    raise ImportError_("Faqat .json, .docx yoki .txt fayllar qabul qilinadi.")
+    raise ImportError_("Faqat .json, .zip, .docx yoki .txt fayllar qabul qilinadi.")
 
 
 def to_json_export(title: str, questions: list[dict]) -> str:
@@ -384,6 +494,8 @@ def to_json_export(title: str, questions: list[dict]) -> str:
              {"question": q["text"], "options": q["options"],
               "answer": q["correct"], "explanation": q.get("explanation", ""),
               **({"category": q["category"]} if q.get("category") else {}),
+              **({"image": q["image"]} if q.get("image") else {}),
+              **({"option_images": q["option_images"]} if q.get("option_images") else {}),
               **({"difficulty": q["difficulty"]} if q.get("difficulty") else {})}
              for q in questions]},
         ensure_ascii=False, indent=2)
