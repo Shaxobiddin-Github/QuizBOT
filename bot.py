@@ -33,6 +33,7 @@ COMMANDS = [
     BotCommand(command="stop", description="⏹ Testni to'xtatish"),
     BotCommand(command="help", description="❓ Yordam"),
     BotCommand(command="id", description="🆔 ID va admin holati"),
+    BotCommand(command="faoliyat", description="📊 Bot faoliyati (admin)"),
 ]
 
 

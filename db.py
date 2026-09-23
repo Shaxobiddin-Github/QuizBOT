@@ -242,6 +242,84 @@ async def broadcast_groups() -> list[aiosqlite.Row]:
            WHERE type IN ('group','supergroup') ORDER BY last_seen DESC""")
 
 
+def iso_ago(days: float = 0, hours: float = 0) -> str:
+    """created_at bilan solishtirish uchun bir xil formatdagi ISO vaqt.
+
+    Diqqat: SQLite'ning datetime('now') bo'sh joyli format beradi va bizdagi
+    «T» li ISO satr bilan to'g'ri solishtirilmaydi — shuning uchun Python'da
+    aynan bir xil ko'rinishda yasaymiz.
+    """
+    from datetime import timedelta
+    return (datetime.now(timezone.utc) - timedelta(days=days, hours=hours)) \
+        .isoformat(timespec="seconds")
+
+
+async def activity_stats() -> dict:
+    """Bot faoliyati bo'yicha umumiy ko'rsatkichlar."""
+    day, week, month = iso_ago(1), iso_ago(7), iso_ago(30)
+
+    users = await fetch_one(
+        """SELECT COUNT(*) AS total,
+                  COALESCE(SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END), 0) AS new_day,
+                  COALESCE(SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END), 0) AS new_week,
+                  COALESCE(SUM(CASE WHEN last_seen  >= ? THEN 1 ELSE 0 END), 0) AS live_week,
+                  COALESCE(SUM(CASE WHEN last_seen  >= ? THEN 1 ELSE 0 END), 0) AS live_month,
+                  COALESCE(SUM(COALESCE(blocked, 0)), 0) AS blocked
+           FROM users""", (day, week, week, month))
+
+    sessions = await fetch_one(
+        """SELECT COUNT(*) AS total,
+                  COALESCE(SUM(CASE WHEN started_at >= ? THEN 1 ELSE 0 END), 0) AS today,
+                  COALESCE(SUM(CASE WHEN status='active' THEN 1 ELSE 0 END), 0) AS active
+           FROM sessions""", (day,))
+
+    by_mode = {r["mode"]: r["n"] for r in await fetch_all(
+        "SELECT mode, COUNT(*) AS n FROM sessions GROUP BY mode")}
+
+    answers = await fetch_one(
+        """SELECT COUNT(*) AS total,
+                  COALESCE(SUM(is_correct), 0) AS correct,
+                  COALESCE(SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END), 0) AS today
+           FROM answers""", (day,))
+
+    chats = await fetch_one(
+        "SELECT COUNT(*) AS n FROM chats WHERE type IN ('group','supergroup')")
+    cols = await fetch_one("SELECT COUNT(*) AS n FROM collections")
+    questions = await fetch_one("SELECT COUNT(*) AS n FROM questions")
+
+    return {"users": dict(users), "sessions": dict(sessions), "by_mode": by_mode,
+            "answers": dict(answers), "chats": chats["n"],
+            "collections": cols["n"], "questions": questions["n"]}
+
+
+async def group_activity() -> list[aiosqlite.Row]:
+    """Guruhlar kesimida faollik."""
+    return await fetch_all(
+        """SELECT c.chat_id, c.title, c.last_seen,
+                  (SELECT COUNT(*) FROM chat_members m WHERE m.chat_id = c.chat_id) AS members,
+                  (SELECT COUNT(*) FROM sessions s WHERE s.chat_id = c.chat_id) AS games,
+                  (SELECT COUNT(*) FROM answers a
+                     JOIN sessions s2 ON s2.id = a.session_id
+                    WHERE s2.chat_id = c.chat_id) AS answers,
+                  (SELECT MAX(s3.started_at) FROM sessions s3
+                    WHERE s3.chat_id = c.chat_id) AS last_game,
+                  (SELECT COUNT(*) FROM collection_shares cs
+                    WHERE cs.chat_id = c.chat_id) AS shared
+           FROM chats c
+           WHERE c.type IN ('group','supergroup')
+           ORDER BY games DESC, c.last_seen DESC""")
+
+
+async def collection_activity() -> list[aiosqlite.Row]:
+    return await fetch_all(
+        """SELECT c.id, c.title, c.kind, c.visibility, c.owner_id,
+                  u.full_name AS owner_name,
+                  (SELECT COUNT(*) FROM questions q WHERE q.collection_id = c.id) AS n,
+                  (SELECT COUNT(*) FROM sessions s WHERE s.collection_id = c.id) AS games
+           FROM collections c LEFT JOIN users u ON u.user_id = c.owner_id
+           ORDER BY games DESC, c.id""")
+
+
 async def first_user_id() -> int | None:
     row = await fetch_one("SELECT user_id FROM users ORDER BY created_at LIMIT 1")
     return row["user_id"] if row else None

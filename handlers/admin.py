@@ -48,6 +48,125 @@ async def cmd_id(message: types.Message) -> None:
         f"🛡 Admin: <b>{admin}</b>")
 
 
+# ---------------------------------------------------------------- /faoliyat
+MODE_ICON = {"classic": "🎯 Klassik", "pro": "🧠 Pro", "iq": "🧩 IQ",
+             "battle": "⚔️ Pro jang"}
+
+
+def _ago(iso: str | None) -> str:
+    if not iso:
+        return "hech qachon"
+    from datetime import datetime, timezone
+    delta = (datetime.now(timezone.utc) - datetime.fromisoformat(iso)).total_seconds()
+    if delta < 3600:
+        return f"{int(delta // 60)} daq oldin"
+    if delta < 86400:
+        return f"{int(delta // 3600)} soat oldin"
+    return f"{int(delta // 86400)} kun oldin"
+
+
+async def _overview() -> str:
+    st = await db.activity_stats()
+    u, s, a = st["users"], st["sessions"], st["answers"]
+    acc = (a["correct"] / a["total"] * 100) if a["total"] else 0
+    modes = " · ".join(
+        f"{MODE_ICON.get(m, m)} {n}" for m, n in sorted(
+            st["by_mode"].items(), key=lambda x: -x[1])) or "—"
+    return (
+        "📊 <b>Bot faoliyati</b>\n\n"
+        "<b>👤 Foydalanuvchilar</b>\n"
+        f"Jami: <b>{u['total']}</b>\n"
+        f"Yangi: bugun {u['new_day']} · haftada {u['new_week']}\n"
+        f"Faol: haftada <b>{u['live_week']}</b> · oyda {u['live_month']}\n"
+        + (f"Bloklaganlar: {u['blocked']}\n" if u["blocked"] else "")
+        + "\n<b>🧩 Testlar</b>\n"
+        f"Jami sessiya: <b>{s['total']}</b>  (bugun {s['today']}"
+        + (f", hozir faol {s['active']}" if s["active"] else "") + ")\n"
+        f"Rejimlar: {modes}\n"
+        f"Javoblar: <b>{a['total']}</b> (bugun {a['today']})\n"
+        f"Umumiy aniqlik: <b>{acc:.0f}%</b>\n"
+        "\n<b>📚 Kontent</b>\n"
+        f"Bazalar: <b>{st['collections']}</b> · savollar: <b>{st['questions']}</b>\n"
+        f"Guruhlar: <b>{st['chats']}</b>")
+
+
+async def _groups_text() -> str:
+    rows = await db.group_activity()
+    if not rows:
+        return ("👥 <b>Guruhlar</b>\n\n<i>Bot hali birorta guruhga qo'shilmagan.</i>")
+    lines = [f"👥 <b>Guruhlar</b> — {len(rows)} ta\n"]
+    for r in rows:
+        lines.append(
+            f"• <b>{ui.esc(r['title'] or r['chat_id'])}</b>\n"
+            f"   👤 {r['members']} a'zo · 🧩 {r['games']} o'yin · "
+            f"✍️ {r['answers']} javob\n"
+            f"   📚 ochilgan baza: {r['shared']} · oxirgi o'yin: {_ago(r['last_game'])}")
+    return "\n".join(lines)
+
+
+async def _collections_text() -> str:
+    rows = await db.collection_activity()
+    icon = {"private": "🔒", "groups": "👥", "public": "🌍"}
+    lines = [f"📚 <b>Bazalar</b> — {len(rows)} ta\n"]
+    for r in rows:
+        kind = " 🧩" if r["kind"] == "iq" else ""
+        lines.append(
+            f"• <b>{ui.esc(r['title'])}</b>{kind}\n"
+            f"   {icon.get(r['visibility'], '?')} {r['n']} ta savol · "
+            f"{r['games']} marta ishlatilgan\n"
+            f"   👤 {ui.esc(r['owner_name'] or 'bot')}")
+    return "\n".join(lines)
+
+
+async def _top_text() -> str:
+    rows = await db.global_top(15)
+    if not rows:
+        return "🏆 <b>Top foydalanuvchilar</b>\n\n<i>Hali ma'lumot yo'q.</i>"
+    lines = ["🏆 <b>Eng faol foydalanuvchilar</b> (≥10 javob)\n"]
+    for i, r in enumerate(rows, 1):
+        acc = r["correct"] / r["total"] * 100 if r["total"] else 0
+        lines.append(f"{ui.medal(i)} {ui.esc(r['name'] or 'Foydalanuvchi')} — "
+                     f"{r['total']} javob, {acc:.0f}% aniqlik")
+    return "\n".join(lines)
+
+
+SECTIONS = {"main": _overview, "grp": _groups_text,
+            "col": _collections_text, "top": _top_text}
+
+
+def _act_kb(active: str) -> types.InlineKeyboardMarkup:
+    tabs = [("📊 Umumiy", "main"), ("👥 Guruhlar", "grp"),
+            ("📚 Bazalar", "col"), ("🏆 Top", "top")]
+    row = [((("• " + t) if key == active else t), f"act:{key}") for t, key in tabs]
+    return ui.kb([row[:2], row[2:], [("🔄 Yangilash", f"act:{active}")]])
+
+
+@router.message(Command("faoliyat", "stat", "activity"))
+async def cmd_activity(message: types.Message) -> None:
+    if not await is_admin(message.from_user.id):
+        return
+    if message.chat.type != "private":
+        await message.answer("Bu buyruq faqat bot bilan yakka chatda ishlaydi.")
+        return
+    await message.answer(await _overview(), reply_markup=_act_kb("main"))
+
+
+@router.callback_query(F.data.startswith("act:"))
+async def cb_activity(call: types.CallbackQuery) -> None:
+    if not await is_admin(call.from_user.id):
+        await call.answer("Bu bo'lim faqat admin uchun.", show_alert=True)
+        return
+    key = call.data.split(":")[1]
+    builder = SECTIONS.get(key)
+    if builder is None:
+        await call.answer()
+        return
+    text = await builder()
+    with contextlib.suppress(TelegramBadRequest):
+        await call.message.edit_text(text[:4000], reply_markup=_act_kb(key))
+    await call.answer()
+
+
 # ------------------------------------------------------------------- /xabar
 @router.message(Command("xabar", "broadcast"))
 async def cmd_broadcast(message: types.Message, state: FSMContext) -> None:

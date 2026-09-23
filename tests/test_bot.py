@@ -365,6 +365,27 @@ async def main():
     check("hisobot chiqdi", "Yuborish tugadi" in S.messages.get(cmid, ""),
           S.messages.get(cmid, "")[:100])
 
+    print("\n━━━ 11b. BOT FAOLIYATI (/faoliyat) ━━━")
+    await dp.feed_update(bot, H.upd_message("/faoliyat", vali, H.chat(102)))
+    check("begona ko'ra olmaydi", "Bot faoliyati" not in last_texts(S)[-1])
+    await dp.feed_update(bot, H.upd_message("/faoliyat", ali, priv))
+    over = last_texts(S)[-1]
+    check("umumiy bo'lim", "Bot faoliyati" in over and "Foydalanuvchilar" in over,
+          over[:80])
+    check("rejimlar ko'rsatilgan", "Rejimlar" in over and "Klassik" in over, over[:200])
+    fmid = S.calls[-1][2].message_id
+    await dp.feed_update(bot, H.upd_call("act:grp", ali, priv, fmid))
+    check("guruhlar bo'limi", "Guruhlar" in S.messages[fmid] and "a'zo" in S.messages[fmid],
+          S.messages[fmid][:100])
+    await dp.feed_update(bot, H.upd_call("act:col", ali, priv, fmid))
+    check("bazalar bo'limi", "Bazalar" in S.messages[fmid] and "savol" in S.messages[fmid])
+    await dp.feed_update(bot, H.upd_call("act:top", ali, priv, fmid))
+    check("top bo'limi", "faol foydalanuvchilar" in S.messages[fmid].lower(),
+          S.messages[fmid][:100])
+    before = S.messages[fmid]
+    await dp.feed_update(bot, H.upd_call("act:grp", begona, priv, fmid))
+    check("begona bo'limlarni ocha olmaydi", S.messages[fmid] == before)
+
     print("\n━━━ 12. IQ TEST (standart tuzilma + rasmlar) ━━━")
     from handlers import iq as iq_h
     import iq_score, media

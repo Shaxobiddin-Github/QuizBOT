@@ -71,6 +71,11 @@ Guruhda o'yin faqat **o'sha guruhga ochilgan** bazalardan boshlanadi.
 
 ## 📣 Ommaviy xabar
 
+`/faoliyat` — admin uchun boshqaruv paneli: foydalanuvchilar (jami, yangi, faol,
+bloklaganlar), testlar (sessiyalar, rejimlar kesimi, javoblar, umumiy aniqlik),
+guruhlar (a'zolar, o'yinlar, ochilgan bazalar, oxirgi faollik), bazalar va
+eng faol foydalanuvchilar. To'rt bo'lim tugmalar bilan almashtiriladi.
+
 `/xabar` — admin uchun. Qabul qiluvchi: barcha foydalanuvchilar, barcha guruhlar
 yoki bitta tanlangan guruh. Matn, rasm, video, fayl — hammasi `copyMessage` orqali
 o'z ko'rinishida yetkaziladi. Jonli progress, botni bloklaganlar avtomatik belgilanadi.
@@ -104,7 +109,7 @@ Nazoratni butunlay o'chirish: `crontab -e` → ikkala qatorni o'chiring.
 ## Buyruqlar
 
 **Shaxsiy:** `/start` `/quiz` `/pro` `/iq` `/bazalar` `/qoshish` `/stats` `/stop` `/help` `/id`
-**Admin:** `/xabar` (ommaviy xabar), `/bekor`
+**Admin:** `/faoliyat` (statistika), `/xabar` (ommaviy xabar), `/bekor`
 **Guruh:** `/quiz` `/pro` `/reyting` `/stop`
 
 ## Savol qo'shish formatlari
