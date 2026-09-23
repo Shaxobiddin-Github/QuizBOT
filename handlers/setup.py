@@ -5,6 +5,7 @@ from aiogram import F, Router, types
 from aiogram.enums import ChatType
 from aiogram.filters import Command
 
+import access
 import config
 import db
 import ui
@@ -17,16 +18,17 @@ MODE_TITLE = {
 }
 
 
-async def setup_card(user_id: int, mode: str) -> tuple[str, types.InlineKeyboardMarkup]:
+async def setup_card(bot, user_id: int, mode: str) -> tuple[str, types.InlineKeyboardMarkup]:
+    col_id = await access.ensure_collection(bot, user_id)
     prefs = await db.get_prefs(user_id)
-    col_id = prefs["collection_id"]
     col = await db.collection(col_id) if col_id else None
     total = await db.count_questions(col_id) if col_id else 0
     learned = await db.learned_count(user_id, col_id) if col_id else 0
 
     if not col:
-        return ("📚 Hozircha birorta baza yo'q. «➕ Savol qo'shish» orqali fayl yuklang.",
-                ui.kb([[("📚 Bazalar", "lib:list")]]))
+        return ("📚 Sizga ochiq baza yo'q.\n\n«➕ Savol qo'shish» orqali o'z bazangizni "
+                "yarating — u faqat sizga ko'rinadi, keyin guruhingizga ochasiz.",
+                ui.kb([[("➕ Savol qo'shish", "lib:new")], [("📚 Bazalar", "lib:list")]]))
 
     count = prefs["count"]
     count_label = "barchasi" if count <= 0 or count >= total else str(count)
@@ -82,7 +84,7 @@ def _mark(v) -> str:
 async def open_classic(message: types.Message) -> None:
     await db.touch_user(message.from_user.id, message.from_user.full_name,
                         message.from_user.username)
-    text, markup = await setup_card(message.from_user.id, "classic")
+    text, markup = await setup_card(message.bot, message.from_user.id, "classic")
     await message.answer(text, reply_markup=markup)
 
 
@@ -91,14 +93,14 @@ async def open_classic(message: types.Message) -> None:
 async def open_pro(message: types.Message) -> None:
     await db.touch_user(message.from_user.id, message.from_user.full_name,
                         message.from_user.username)
-    text, markup = await setup_card(message.from_user.id, "pro")
+    text, markup = await setup_card(message.bot, message.from_user.id, "pro")
     await message.answer(text, reply_markup=markup)
 
 
 @router.message(Command("sozlamalar"))
 @router.message(F.text == ui.BTN_SETTINGS)
 async def open_settings(message: types.Message) -> None:
-    text, markup = await setup_card(message.from_user.id, "pro")
+    text, markup = await setup_card(message.bot, message.from_user.id, "pro")
     await message.answer(
         "⚙️ <b>Sozlamalar</b> — ikkala rejimga ham tegishli.\n\n" + text,
         reply_markup=markup)
@@ -121,15 +123,22 @@ async def on_setup(call: types.CallbackQuery) -> None:
         return
 
     if action == "col":
-        cols = await db.list_collections()
-        rows = [[(f"{'⭐️ ' if c['is_default'] else ''}{ui.shorten(c['title'], 28)} "
-                  f"· {c['n']}", f"su:{mode}:setcol:{c['id']}")] for c in cols]
+        cols = await access.visible_collections(call.bot, uid)
+        rows = [[(("👤 " if c["owner_id"] == uid else "🤝 ")
+                  + f"{ui.shorten(c['title'], 26)} · {c['n']}",
+                  f"su:{mode}:setcol:{c['id']}")] for c in cols]
+        rows.append([("➕ Yangi baza", "lib:new")])
         rows.append([("⬅️ Orqaga", f"su:{mode}:back")])
-        await call.message.edit_text("📚 Bazani tanlang:", reply_markup=ui.kb(rows))
+        await call.message.edit_text(
+            "📚 Bazani tanlang:\n<i>👤 — o'zingizniki, 🤝 — sizga ochilgan</i>",
+            reply_markup=ui.kb(rows))
         await call.answer()
         return
 
     if action == "setcol":
+        if not await access.can_access(call.bot, uid, int(rest[0])):
+            await call.answer("Bu baza sizga ochiq emas.", show_alert=True)
+            return
         await db.set_pref(uid, "collection_id", int(rest[0]))
         await _refresh(call, mode)
         await call.answer("Baza tanlandi ✅")
@@ -197,7 +206,7 @@ async def on_setup(call: types.CallbackQuery) -> None:
 
 
 async def _refresh(call: types.CallbackQuery, mode: str) -> None:
-    text, markup = await setup_card(call.from_user.id, mode)
+    text, markup = await setup_card(call.bot, call.from_user.id, mode)
     try:
         await call.message.edit_text(text, reply_markup=markup)
     except Exception:

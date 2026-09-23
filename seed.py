@@ -35,6 +35,7 @@ async def ensure_default() -> None:
             owner_id=None,
             description=payload.get("description", ""),
             is_default=1,
+            visibility="public",
         )
     added, dup = await db.add_questions(col_id, result.questions)
     log.info("Default baza yuklandi: +%s ta savol (takror: %s)", added, dup)

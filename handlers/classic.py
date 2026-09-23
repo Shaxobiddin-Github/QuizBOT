@@ -9,6 +9,7 @@ import time
 from aiogram import Bot, F, Router, types
 from aiogram.exceptions import TelegramBadRequest
 
+import access
 import config
 import db
 import ui
@@ -31,10 +32,12 @@ def cancel_runner(session_id: int) -> None:
 
 
 async def start_quiz(message: types.Message, user: types.User) -> None:
+    col_id = await access.ensure_collection(message.bot, user.id)
     prefs = await db.get_prefs(user.id)
-    col_id = prefs["collection_id"]
     if not col_id or not await db.count_questions(col_id):
-        await message.answer("📚 Bazada savol yo'q. Avval fayl yuklang.")
+        await message.answer(
+            "📚 Sizga ochiq baza yo'q.\n«➕ Savol qo'shish» orqali o'z bazangizni "
+            "yarating yoki guruhdoshingizdan o'z bazasini shu guruhga ochishni so'rang.")
         return
 
     await db.abort_active(user.id)

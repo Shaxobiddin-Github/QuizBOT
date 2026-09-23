@@ -82,6 +82,30 @@ CREATE TABLE IF NOT EXISTS learned (
     PRIMARY KEY (user_id, question_id)
 );
 
+CREATE TABLE IF NOT EXISTS chats (
+    chat_id    INTEGER PRIMARY KEY,
+    title      TEXT,
+    type       TEXT,
+    added_at   TEXT,
+    last_seen  TEXT
+);
+
+CREATE TABLE IF NOT EXISTS chat_members (
+    chat_id    INTEGER,
+    user_id    INTEGER,
+    last_seen  TEXT,
+    PRIMARY KEY (chat_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_cm_user ON chat_members(user_id);
+
+CREATE TABLE IF NOT EXISTS collection_shares (
+    collection_id INTEGER REFERENCES collections(id) ON DELETE CASCADE,
+    chat_id       INTEGER,
+    created_at    TEXT,
+    PRIMARY KEY (collection_id, chat_id)
+);
+CREATE INDEX IF NOT EXISTS idx_cs_chat ON collection_shares(chat_id);
+
 CREATE TABLE IF NOT EXISTS prefs (
     user_id       INTEGER PRIMARY KEY,
     collection_id INTEGER,
@@ -112,8 +136,34 @@ async def connect() -> aiosqlite.Connection:
         _conn = await aiosqlite.connect(config.DB_PATH)
         _conn.row_factory = aiosqlite.Row
         await _conn.executescript(SCHEMA)
+        await _migrate(_conn)
         await _conn.commit()
     return _conn
+
+
+async def _migrate(conn: aiosqlite.Connection) -> None:
+    """Eski bazani yangi ustunlarga moslash (orqaga mos, xavfsiz)."""
+    async with conn.execute("PRAGMA table_info(collections)") as cur:
+        cols = {r["name"] for r in await cur.fetchall()}
+    if "visibility" not in cols:
+        # private | groups | public
+        await conn.execute(
+            "ALTER TABLE collections ADD COLUMN visibility TEXT DEFAULT 'private'")
+        # Mavjud default baza allaqachon hamma ishlatayotgani uchun ochiq qoladi —
+        # egasi xohlagan payt bir tugma bilan yopadi.
+        await conn.execute(
+            "UPDATE collections SET visibility='public' WHERE is_default=1")
+        await conn.execute(
+            "UPDATE collections SET visibility='private' WHERE is_default=0")
+    async with conn.execute("PRAGMA table_info(users)") as cur:
+        ucols = {r["name"] for r in await cur.fetchall()}
+    if "blocked" not in ucols:
+        await conn.execute("ALTER TABLE users ADD COLUMN blocked INTEGER DEFAULT 0")
+    await conn.execute(
+        """UPDATE collections SET owner_id=(SELECT user_id FROM users
+                                            ORDER BY created_at LIMIT 1)
+           WHERE is_default=1 AND owner_id IS NULL""")
+    await conn.commit()
 
 
 async def close() -> None:
@@ -155,6 +205,27 @@ async def touch_user(user_id: int, full_name: str, username: str | None) -> None
     )
 
 
+async def set_blocked(user_id: int, blocked: bool = True) -> None:
+    await execute("UPDATE users SET blocked=? WHERE user_id=?", (int(blocked), user_id))
+
+
+async def broadcast_users() -> list[int]:
+    rows = await fetch_all(
+        "SELECT user_id FROM users WHERE COALESCE(blocked,0)=0 ORDER BY user_id")
+    return [r["user_id"] for r in rows]
+
+
+async def broadcast_groups() -> list[aiosqlite.Row]:
+    return await fetch_all(
+        """SELECT chat_id, title FROM chats
+           WHERE type IN ('group','supergroup') ORDER BY last_seen DESC""")
+
+
+async def first_user_id() -> int | None:
+    row = await fetch_one("SELECT user_id FROM users ORDER BY created_at LIMIT 1")
+    return row["user_id"] if row else None
+
+
 async def get_prefs(user_id: int) -> dict:
     row = await fetch_one("SELECT * FROM prefs WHERE user_id=?", (user_id,))
     if row is None:
@@ -190,11 +261,12 @@ async def default_collection_id() -> int | None:
 
 
 async def create_collection(title: str, owner_id: int | None, description: str = "",
-                            is_default: int = 0) -> int:
+                            is_default: int = 0, visibility: str = "private") -> int:
     return await execute(
-        "INSERT INTO collections(title, description, owner_id, is_default, created_at)"
-        " VALUES(?,?,?,?,?)",
-        (title.strip()[:120], description[:400], owner_id, is_default, now()),
+        "INSERT INTO collections(title, description, owner_id, is_default,"
+        " visibility, created_at) VALUES(?,?,?,?,?,?)",
+        (title.strip()[:120], description[:400], owner_id, is_default,
+         visibility, now()),
     )
 
 
@@ -207,6 +279,102 @@ async def list_collections() -> list[aiosqlite.Row]:
         """SELECT c.*, (SELECT COUNT(*) FROM questions q WHERE q.collection_id=c.id) AS n
            FROM collections c ORDER BY c.is_default DESC, c.id"""
     )
+
+
+# ------------------------------------------------------- ruxsatlar / ko'rinish
+VISIBILITY = ("private", "groups", "public")
+
+
+async def set_visibility(col_id: int, visibility: str) -> None:
+    if visibility not in VISIBILITY:
+        raise ValueError(visibility)
+    await execute("UPDATE collections SET visibility=? WHERE id=?", (visibility, col_id))
+
+
+async def share_chats(col_id: int) -> list[int]:
+    rows = await fetch_all(
+        "SELECT chat_id FROM collection_shares WHERE collection_id=?", (col_id,))
+    return [r["chat_id"] for r in rows]
+
+
+async def toggle_share(col_id: int, chat_id: int) -> bool:
+    row = await fetch_one(
+        "SELECT 1 FROM collection_shares WHERE collection_id=? AND chat_id=?",
+        (col_id, chat_id))
+    if row:
+        await execute(
+            "DELETE FROM collection_shares WHERE collection_id=? AND chat_id=?",
+            (col_id, chat_id))
+        return False
+    await execute(
+        "INSERT INTO collection_shares(collection_id, chat_id, created_at) VALUES(?,?,?)",
+        (col_id, chat_id, now()))
+    return True
+
+
+async def shared_collections_for_chat(chat_id: int) -> list[int]:
+    rows = await fetch_all(
+        "SELECT collection_id FROM collection_shares WHERE chat_id=?", (chat_id,))
+    return [r["collection_id"] for r in rows]
+
+
+async def touch_chat(chat_id: int, title: str, kind: str) -> None:
+    await execute(
+        """INSERT INTO chats(chat_id, title, type, added_at, last_seen)
+           VALUES(?,?,?,?,?)
+           ON CONFLICT(chat_id) DO UPDATE SET
+             title=excluded.title, type=excluded.type, last_seen=excluded.last_seen""",
+        (chat_id, title or "", kind, now(), now()))
+
+
+async def touch_chat_member(chat_id: int, user_id: int) -> None:
+    await execute(
+        """INSERT INTO chat_members(chat_id, user_id, last_seen) VALUES(?,?,?)
+           ON CONFLICT(chat_id, user_id) DO UPDATE SET last_seen=excluded.last_seen""",
+        (chat_id, user_id, now()))
+
+
+async def user_chats(user_id: int) -> list[aiosqlite.Row]:
+    """Foydalanuvchi bot bilan ishlatgan guruhlar."""
+    return await fetch_all(
+        """SELECT c.chat_id, c.title, c.type FROM chats c
+           JOIN chat_members m ON m.chat_id = c.chat_id
+           WHERE m.user_id = ? AND c.type IN ('group','supergroup')
+           ORDER BY m.last_seen DESC""", (user_id,))
+
+
+async def chat(chat_id: int) -> aiosqlite.Row | None:
+    return await fetch_one("SELECT * FROM chats WHERE chat_id=?", (chat_id,))
+
+
+async def owned_collections(user_id: int) -> list[aiosqlite.Row]:
+    return await fetch_all(
+        """SELECT c.*, (SELECT COUNT(*) FROM questions q WHERE q.collection_id=c.id) AS n
+           FROM collections c WHERE c.owner_id=? ORDER BY c.id""", (user_id,))
+
+
+async def candidate_collections(user_id: int) -> list[aiosqlite.Row]:
+    """O'zi egasi, ochiq, yoki guruhga ulashilgan bazalar (a'zolik keyin tekshiriladi)."""
+    return await fetch_all(
+        """SELECT c.*, (SELECT COUNT(*) FROM questions q WHERE q.collection_id=c.id) AS n
+           FROM collections c
+           WHERE c.owner_id = ?
+              OR c.visibility = 'public'
+              OR (c.visibility = 'groups' AND EXISTS (
+                    SELECT 1 FROM collection_shares s WHERE s.collection_id = c.id))
+           ORDER BY (c.owner_id = ?) DESC, c.is_default DESC, c.id""",
+        (user_id, user_id))
+
+
+async def collections_for_chat(chat_id: int) -> list[aiosqlite.Row]:
+    """Guruhda o'ynash mumkin bo'lgan bazalar: ochiq yoki shu guruhga ulashilgan."""
+    return await fetch_all(
+        """SELECT c.*, (SELECT COUNT(*) FROM questions q WHERE q.collection_id=c.id) AS n
+           FROM collections c
+           WHERE c.visibility = 'public'
+              OR EXISTS (SELECT 1 FROM collection_shares s
+                         WHERE s.collection_id = c.id AND s.chat_id = ?)
+           ORDER BY c.is_default DESC, c.id""", (chat_id,))
 
 
 async def delete_collection(col_id: int) -> None:

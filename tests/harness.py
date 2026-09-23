@@ -13,7 +13,8 @@ NOW = datetime.now(timezone.utc)
 _ids = itertools.count(1000)
 _polls = itertools.count(5000)
 
-OWNERS = {101}   # guruh egasi deb hisoblanadigan foydalanuvchilar
+OWNERS = {101}          # guruh egasi deb hisoblanadigan foydalanuvchilar
+MEMBERS: dict = {}      # chat_id -> a'zolar to'plami (yo'q bo'lsa — hamma a'zo)
 
 ME = types.User(id=8651732102, is_bot=True, first_name="quizbotuz",
                 username="quizbot_uzbot_bot")
@@ -62,6 +63,8 @@ class FakeSession:
             return True
         if name == "SendMessage":
             return self._msg(m.chat_id, m.text, m.reply_markup, bot=bot)
+        if name == "CopyMessage":
+            return types.MessageId(message_id=next(_ids))
         if name == "SendDocument":
             return self._msg(m.chat_id, m.caption or "<document>", bot=bot)
         if name in ("EditMessageText",):
@@ -85,6 +88,10 @@ class FakeSession:
                 correct_option_id=m.correct_option_id)
             return self._msg(m.chat_id, "[POLL] " + m.question, poll=poll, bot=bot)
         if name == "GetChatMember":
+            allowed = MEMBERS.get(m.chat_id)
+            if allowed is not None and m.user_id not in allowed:
+                return types.ChatMemberLeft(user=user(m.user_id, "Chetdagi"),
+                                            status="left")
             if m.user_id in OWNERS:
                 return types.ChatMemberOwner(user=user(m.user_id, "Owner"),
                                              status="creator", is_anonymous=False)
@@ -93,13 +100,22 @@ class FakeSession:
 
 
 def make(dp_routers):
+    import access
     session = FakeSession()
     bot = Bot("8651732102:TEST", default=DefaultBotProperties(parse_mode=ParseMode.HTML),
               session=session)
     dp = Dispatcher(storage=MemoryStorage())
+    dp.update.outer_middleware(access.ChatTracker())
     for r in dp_routers:
         dp.include_router(r)
     return bot, dp, session
+
+
+def upd_my_chat_member(c, u, status="member"):
+    return types.Update(update_id=next(_ids), my_chat_member=types.ChatMemberUpdated(
+        chat=c, from_user=u, date=NOW,
+        old_chat_member=types.ChatMemberLeft(user=ME, status="left"),
+        new_chat_member=types.ChatMemberMember(user=ME, status=status)))
 
 
 def upd_message(text, u, c, mid=None, document=None):

@@ -11,6 +11,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import BotCommand, BotCommandScopeAllGroupChats
 
 import config
+import access
 import db
 import seed
 from handlers import ROUTERS
@@ -30,6 +31,7 @@ COMMANDS = [
     BotCommand(command="stats", description="📊 Statistika"),
     BotCommand(command="stop", description="⏹ Testni to'xtatish"),
     BotCommand(command="help", description="❓ Yordam"),
+    BotCommand(command="id", description="🆔 ID va admin holati"),
 ]
 
 
@@ -45,6 +47,7 @@ async def main() -> None:
     bot = Bot(config.BOT_TOKEN,
               default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher(storage=MemoryStorage())
+    dp.update.outer_middleware(access.ChatTracker())
     for router in ROUTERS:
         dp.include_router(router)
 

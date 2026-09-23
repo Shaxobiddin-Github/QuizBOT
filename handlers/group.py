@@ -10,6 +10,7 @@ from aiogram import Bot, F, Router, types
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command
 
+import access
 import config
 import db
 import ui
@@ -56,11 +57,18 @@ async def open_lobby(message: types.Message, mode: str) -> None:
         await message.answer("⏳ Bu guruhda test allaqachon ketmoqda. To'xtatish: /stop")
         return
 
-    prefs = await db.get_prefs(message.from_user.id)
-    col_id = prefs["collection_id"] or await db.default_collection_id()
-    if not col_id or not await db.count_questions(col_id):
-        await message.answer("📚 Bazada savol yo'q.")
+    allowed = [c for c in await db.collections_for_chat(chat_id) if c["n"]]
+    if not allowed:
+        await message.answer(
+            "📚 <b>Bu guruhga ochilgan baza yo'q.</b>\n\n"
+            "Baza egasi botga yakka chatda yozib: «📚 Bazalar» → bazani tanlab → "
+            "«🔐 Kim ko'ra oladi?» → «👥 Guruhlar» → shu guruhni belgilashi kerak.\n\n"
+            "<i>Guruh ro'yxatda chiqishi uchun avval shu yerda /start yozing.</i>")
         return
+    prefs = await db.get_prefs(message.from_user.id)
+    col_id = prefs["collection_id"]
+    if col_id not in {c["id"] for c in allowed}:
+        col_id = allowed[0]["id"]
 
     LOBBIES[chat_id] = {
         "mode": mode,
@@ -109,6 +117,28 @@ async def _refresh_lobby(call: types.CallbackQuery) -> None:
     text, markup = await _lobby_card(call.message.chat.id)
     with contextlib.suppress(TelegramBadRequest):
         await call.message.edit_text(text, reply_markup=markup)
+
+
+@router.my_chat_member(GROUP)
+async def on_bot_added(event: types.ChatMemberUpdated) -> None:
+    """Bot guruhga qo'shilganda guruhni ro'yxatga olamiz."""
+    chat = event.chat
+    await db.touch_chat(chat.id, chat.title or "", chat.type)
+    if event.from_user and not event.from_user.is_bot:
+        await db.touch_chat_member(chat.id, event.from_user.id)
+    new = event.new_chat_member
+    if new.user.id != (await event.bot.me()).id:
+        return
+    if new.status in ("member", "administrator"):
+        await event.bot.send_message(
+            chat.id,
+            "👋 <b>Salom!</b> Test boti guruhga qo'shildi.\n\n"
+            "🎯 /quiz — klassik test\n"
+            "🧠 /pro — Pro jang\n"
+            "🏆 /reyting — guruh reytingi\n\n"
+            "📚 O'z savollaringizni shu guruhga ochish uchun botga yakka chatda: "
+            "«📚 Bazalar» → baza → «🔐 Kim ko'ra oladi?» → «👥 Guruhlar» → "
+            f"«{ui.esc(chat.title or 'shu guruh')}» ni belgilang.")
 
 
 @router.message(Command("quiz"), GROUP)
@@ -210,10 +240,11 @@ async def cb_params(call: types.CallbackQuery) -> None:
             rows.append(cur)
         title = "⏱ Har savolga qancha vaqt?"
     else:
-        cols = await db.list_collections()
+        cols = [c for c in await db.collections_for_chat(call.message.chat.id) if c["n"]]
         rows = [[(f"{ui.shorten(c['title'], 28)} · {c['n']}", f"g:set:col:{c['id']}")]
                 for c in cols]
-        title = "📚 Bazani tanlang:"
+        title = ("📚 Bu guruhga ochilgan bazalar:" if cols else
+                 "📚 Bu guruhga hech qanday baza ochilmagan.")
     rows.append([("⬅️ Orqaga", "g:back")])
     with contextlib.suppress(TelegramBadRequest):
         await call.message.edit_text(title, reply_markup=ui.kb(rows))
@@ -227,6 +258,11 @@ async def cb_set(call: types.CallbackQuery) -> None:
         await call.answer("Lobbi yopilgan.", show_alert=True)
         return
     _, _, what, value = call.data.split(":")
+    if what == "col":
+        allowed = {c["id"] for c in await db.collections_for_chat(call.message.chat.id)}
+        if int(value) not in allowed:
+            await call.answer("Bu baza guruhga ochilmagan.", show_alert=True)
+            return
     key = {"cnt": "count", "tmr": "timer", "col": "col_id"}[what]
     lobby[key] = int(value)
     await _refresh_lobby(call)

@@ -206,7 +206,8 @@ async def main():
     bot.download = fake_download
 
     await dp.feed_update(bot, H.upd_message("➕ Savol qo'shish", ali, priv))
-    check("baza tanlash chiqdi", "qaysi bazaga" in last_texts(S)[-1])
+    t = last_texts(S)[-1]
+    check("baza tanlash chiqdi", "qaysi bazaga" in t or "Sizda hali baza yo'q" in t, t[:80])
     await dp.feed_update(bot, H.upd_call("lib:new", ali, priv))
     await dp.feed_update(bot, H.upd_message("Sinov bazasi", ali, priv))
     check("yangi baza yaratildi", "bazasi yaratildi" in last_texts(S)[-1])
@@ -268,6 +269,94 @@ async def main():
     bad_doc = types.Document(file_id="f3", file_unique_id="u3", file_name="x.doc", file_size=10)
     await dp.feed_update(bot, H.upd_message("", ali, priv, document=bad_doc))
     check(".doc rad etildi", any(".doc" in t and "qo'llab" in t for t in S.messages.values()))
+
+    print("\n━━━ 10. RUXSATLAR: kim kimning savolini ko'radi ━━━")
+    begona = H.user(104, "Begona")
+    H.MEMBERS[-1001] = {101, 102}          # Sardor va Begona guruhda emas
+    await db.touch_user(104, "Begona", None)
+    import access
+    access._member_cache.clear()
+
+    # Ali yangi shaxsiy baza ochadi
+    await dp.feed_update(bot, H.upd_call("lib:new", ali, priv))
+    await dp.feed_update(bot, H.upd_message("Pedagogika 402", ali, priv))
+    mycol = (await db.get_prefs(101))["collection_id"]
+    col = await db.collection(mycol)
+    check("yangi baza private", col["visibility"] == "private", col["visibility"])
+    check("egasi Ali", col["owner_id"] == 101)
+    await dp.feed_update(bot, H.upd_message("1. Yopiq savol?\n+ha\n-yoq\n-balki", ali, priv))
+    mid5 = [m for k, m, _ in S.calls if k == "EditMessageText"][-1].message_id
+    await dp.feed_update(bot, H.upd_call("lib:save", ali, priv, mid5))
+    check("savol qo'shildi", await db.count_questions(mycol) == 1)
+
+    vis_ali = {c["id"] for c in await access.visible_collections(bot, 101)}
+    vis_vali = {c["id"] for c in await access.visible_collections(bot, 102)}
+    check("Ali o'z bazasini ko'radi", mycol in vis_ali)
+    check("Vali ko'ra olmaydi", mycol not in vis_vali, str(vis_vali))
+
+    # guruhga ochamiz
+    await dp.feed_update(bot, H.upd_call(f"lib:perm:{mycol}", ali, priv))
+    pmid = [m for k, m, _ in S.calls if k == "EditMessageText"][-1].message_id
+    check("ruxsatlar paneli", "kim ko'ra oladi" in S.messages[pmid].lower())
+    await dp.feed_update(bot, H.upd_call(f"lib:vis:{mycol}:groups", ali, priv, pmid))
+    check("guruh ro'yxati chiqdi", "Test guruh" in S.messages[pmid], S.messages[pmid][:200])
+    await dp.feed_update(bot, H.upd_call(f"lib:grp:{mycol}:-1001", ali, priv, pmid))
+    check("guruhga ochildi", await db.share_chats(mycol) == [-1001])
+
+    access._member_cache.clear()
+    vis_vali = {c["id"] for c in await access.visible_collections(bot, 102)}
+    vis_begona = {c["id"] for c in await access.visible_collections(bot, 104)}
+    check("guruhdosh Vali endi ko'radi", mycol in vis_vali)
+    check("chetdagi Begona ko'rmaydi", mycol not in vis_begona, str(vis_begona))
+    check("Begona kira olmaydi", not await access.can_access(bot, 104, mycol))
+
+    # begona baza tanlashga urinsa
+    await dp.feed_update(bot, H.upd_call(f"lib:pick:{mycol}", begona, H.chat(104)))
+    check("begona tanlay olmaydi",
+          (await db.get_prefs(104))["collection_id"] != mycol)
+    # begona savol qo'sha olmaydi
+    await dp.feed_update(bot, H.upd_call(f"lib:addto:{mycol}", begona, H.chat(104)))
+    check("begona savol qo'sha olmaydi",
+          any("faqat o'z bazangizga" in t for t in S.messages.values()))
+
+    # guruh lobbisi faqat ochilgan bazalarni ko'rsatadi
+    for_chat = {c["id"] for c in await db.collections_for_chat(-1001)}
+    check("guruhda baza ko'rinadi", mycol in for_chat)
+    for_other = {c["id"] for c in await db.collections_for_chat(-1002)}
+    check("boshqa guruhda ko'rinmaydi", mycol not in for_other, str(for_other))
+
+    # bot yangi guruhga qo'shilganda ro'yxatga tushadi
+    newgrp = H.chat(-1002, "supergroup", "402-guruh")
+    await dp.feed_update(bot, H.upd_my_chat_member(newgrp, ali))
+    check("yangi guruh ro'yxatga olindi", (await db.chat(-1002)) is not None)
+    chats = [c["chat_id"] for c in await db.user_chats(101)]
+    check("guruh Ali ro'yxatida", -1002 in chats, str(chats))
+
+    print("\n━━━ 11. OMMAVIY XABAR (broadcast) ━━━")
+    from handlers import admin as admin_h
+    check("Ali admin", await admin_h.is_admin(101))
+    check("Vali admin emas", not await admin_h.is_admin(102))
+    await dp.feed_update(bot, H.upd_message("/xabar", vali, H.chat(102)))
+    check("begona /xabar ishlatolmaydi",
+          "Ommaviy xabar" not in last_texts(S)[-1])
+    await dp.feed_update(bot, H.upd_message("/xabar", ali, priv))
+    check("admin menyusi", "Ommaviy xabar" in last_texts(S)[-1])
+    amid = S.calls[-1][2].message_id
+    await dp.feed_update(bot, H.upd_call("ad:pick:0", ali, priv, amid))
+    check("guruhlar ro'yxati", "Qaysi guruhga" in S.messages[amid])
+    await dp.feed_update(bot, H.upd_call("ad:t:one:-1002", ali, priv, amid))
+    check("xabar so'raldi", "xabarni menga tashlang" in S.messages[amid])
+    await dp.feed_update(bot, H.upd_message("Salom 402-guruh, ertaga imtihon!", ali, priv))
+    check("tasdiq so'raldi", "Tasdiqlaysizmi" in last_texts(S)[-1])
+    cmid = S.calls[-1][2].message_id
+    n_copy = sum(1 for k, _, _ in S.calls if k == "CopyMessage")
+    await dp.feed_update(bot, H.upd_call("ad:go", ali, priv, cmid))
+    await asyncio.sleep(1.2)
+    copies = [m for k, m, _ in S.calls if k == "CopyMessage"]
+    check("xabar yuborildi", len(copies) == n_copy + 1, f"{len(copies)} ta")
+    check("to'g'ri guruhga", bool(copies) and copies[-1].chat_id == -1002)
+    check("hisobot chiqdi", "Yuborish tugadi" in S.messages.get(cmid, ""),
+          S.messages.get(cmid, "")[:100])
 
     await db.execute("DELETE FROM answers WHERE user_id IN (101,102,103)")
     await db.execute("DELETE FROM sessions WHERE owner_id IN (101,102,103)")

@@ -9,7 +9,32 @@
 | Shaxsiy chat | Telegram quiz-poll, taymer, avtomatik keyingi savol | Bitta xabar ichida navigatsiya, 50:50, «o'rgandim», xatolar tahlili |
 | Guruh | Hamma poll'ga javob beradi, oxirida reyting | **Pro jang** — hamma bir vaqtda javob beradi, tezlik uchun bonus ball |
 
-Ikkala rejim **bitta umumiy bazadan** ishlaydi.
+## 🔐 Ruxsatlar
+
+Har bir foydalanuvchi **o'z bazasini** yaratadi. Qo'shilgan savollar sukut bo'yicha
+**faqat egasiga** ko'rinadi. Egasi «📚 Bazalar» → baza → «🔐 Kim ko'ra oladi?» orqali:
+
+| Rejim | Kim ko'radi |
+|---|---|
+| 🔒 Faqat men | faqat egasi |
+| 👥 Tanlangan guruhlar | belgilangan Telegram guruhlari a'zolari |
+| 🌍 Hamma | botning barcha foydalanuvchilari |
+
+Guruh ro'yxatda chiqishi uchun bot o'sha guruhga qo'shilgan va foydalanuvchi u yerda
+bot bilan bir marta ishlagan bo'lishi kerak. A'zolik `getChatMember` orqali
+tekshiriladi (30 daqiqa keshlanadi), guruhdan chiqqan odam avtomatik kirish
+huquqini yo'qotadi.
+
+Guruhda o'yin faqat **o'sha guruhga ochilgan** bazalardan boshlanadi.
+
+## 📣 Ommaviy xabar
+
+`/xabar` — admin uchun. Qabul qiluvchi: barcha foydalanuvchilar, barcha guruhlar
+yoki bitta tanlangan guruh. Matn, rasm, video, fayl — hammasi `copyMessage` orqali
+o'z ko'rinishida yetkaziladi. Jonli progress, botni bloklaganlar avtomatik belgilanadi.
+
+Admin `.env` dagi `ADMINS` ro'yxati bilan belgilanadi; bo'sh bo'lsa birinchi
+ro'yxatdan o'tgan foydalanuvchi admin bo'ladi. O'z ID'ingizni bilish: `/id`.
 
 ## Boshqaruv
 
@@ -19,7 +44,7 @@ Ikkala rejim **bitta umumiy bazadan** ishlaydi.
 ./bot-ctl.sh stop       # to'xtatish
 ./bot-ctl.sh restart    # qayta ishga tushirish
 ./bot-ctl.sh log        # jonli log
-./bot-ctl.sh test       # 59 ta integratsion test
+./bot-ctl.sh test       # 86 ta integratsion test
 ```
 
 Bot **cron** nazorati ostida: har daqiqada tekshiriladi, o'chib qolsa
@@ -36,7 +61,8 @@ Nazoratni butunlay o'chirish: `crontab -e` → ikkala qatorni o'chiring.
 
 ## Buyruqlar
 
-**Shaxsiy:** `/start` `/quiz` `/pro` `/bazalar` `/qoshish` `/stats` `/stop` `/help`
+**Shaxsiy:** `/start` `/quiz` `/pro` `/bazalar` `/qoshish` `/stats` `/stop` `/help` `/id`
+**Admin:** `/xabar` (ommaviy xabar), `/bekor`
 **Guruh:** `/quiz` `/pro` `/reyting` `/stop`
 
 ## Savol qo'shish formatlari
@@ -72,7 +98,9 @@ handlers/
   setup.py        test sozlamalari kartasi
   classic.py      1-rejim (quiz-poll)
   pro.py          2-rejim (inline interfeys)
-  library.py      bazalar, import/eksport
+  library.py      bazalar, import/eksport, ruxsatlar
+  admin.py        ommaviy xabar (broadcast)
+access.py         kirish huquqi, guruh a'zoligi keshi
 data/quiz.db      baza          data/default_questions.json  197 ta savol
 tests/            integratsion testlar (soxta Telegram API)
 ```

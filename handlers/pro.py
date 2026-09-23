@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from aiogram import F, Router, types
 from aiogram.exceptions import TelegramBadRequest
 
+import access
 import db
 import ui
 
@@ -21,8 +22,8 @@ FIFTY: dict[tuple[int, int], set[int]] = {}
 # ------------------------------------------------------------------ boshlash
 async def start_quiz(message: types.Message, user: types.User,
                      only_mistakes: bool = False) -> None:
+    col_id = await access.ensure_collection(message.bot, user.id)
     prefs = await db.get_prefs(user.id)
-    col_id = prefs["collection_id"]
 
     if only_mistakes:
         q_ids = await db.weak_questions(user.id, max(prefs["count"] or 30, 10))
@@ -31,7 +32,9 @@ async def start_quiz(message: types.Message, user: types.User,
             return
     else:
         if not col_id or not await db.count_questions(col_id):
-            await message.answer("📚 Bazada savol yo'q. Avval fayl yuklang.")
+            await message.answer(
+                "📚 Sizga ochiq baza yo'q.\n«➕ Savol qo'shish» orqali o'z bazangizni "
+                "yarating yoki guruhdoshingizdan o'z bazasini shu guruhga ochishni so'rang.")
             return
         q_ids = await db.pick_questions(
             col_id, prefs["count"], user.id,
