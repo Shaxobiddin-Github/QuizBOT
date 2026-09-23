@@ -7,8 +7,8 @@ import logging
 import time
 
 from aiogram import Bot, F, Router, types
-from aiogram.exceptions import (TelegramForbiddenError, TelegramRetryAfter,
-                                TelegramBadRequest)
+from aiogram.exceptions import (TelegramAPIError, TelegramBadRequest,
+                                TelegramForbiddenError, TelegramRetryAfter)
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -16,6 +16,7 @@ from aiogram.fsm.state import State, StatesGroup
 import bg
 import config
 import db
+import recorder
 import ui
 
 router = Router(name="admin")
@@ -167,6 +168,85 @@ async def cb_activity(call: types.CallbackQuery) -> None:
     await call.answer()
 
 
+# ---------------------------------------------------------------- /tozalash
+HOUR_CHOICES = [1, 3, 6, 12, 24, 48]
+
+
+async def _clean_panel() -> tuple[str, types.InlineKeyboardMarkup]:
+    on = (await db.get_setting(recorder.KEY_ENABLED, "1")) == "1"
+    hours = int(float(await db.get_setting(recorder.KEY_HOURS,
+                                           str(recorder.DEFAULT_HOURS))))
+    st = await db.sent_summary()
+    pending = len(await db.expired_messages(db.iso_ago(hours=hours), 1000))
+
+    holat = "yoniq ✅" if on else "o'chiq ❌"
+    text = (
+        "🧹 <b>Avtomatik tozalash</b>\n\n"
+        f"Holat: <b>{holat}</b>\n"
+        f"Muddat: <b>{hours} soat</b>\n\n"
+        "Bot guruhlarga yuborgan xabarlar (test savollari, natijalar, "
+        "e'lonlar) shu muddatdan keyin o'chiriladi.\n\n"
+        f"📊 Hisobga olingan: <b>{st['total']}</b> ta xabar\n"
+        f"📌 Qadalganlar: <b>{st['pinned']}</b> — <i>ular hech qachon o'chmaydi</i>\n"
+        f"📎 Fayllar: <b>{st['files']}</b>\n"
+        f"⏳ Navbatda: <b>{pending}</b> ta o'chirishga tayyor\n\n"
+        "<i>⚠️ Telegram botga 48 soatdan eski xabarni o'chirishga ruxsat "
+        "bermasligi mumkin — bunday xabarlar ro'yxatdan shunchaki chiqariladi.</i>"
+    )
+    rows = [[("🔴 O'chirish" if on else "🟢 Yoqish", "cl:toggle")]]
+    cur = []
+    for h in HOUR_CHOICES:
+        cur.append((f"{'• ' if h == hours else ''}{h} soat", f"cl:h:{h}"))
+        if len(cur) == 3:
+            rows.append(cur)
+            cur = []
+    if cur:
+        rows.append(cur)
+    rows.append([("🧹 Hozir tozalash", "cl:now"), ("🔄 Yangilash", "cl:show")])
+    return text, ui.kb(rows)
+
+
+@router.message(Command("tozalash", "clean"))
+async def cmd_clean(message: types.Message) -> None:
+    if not await is_admin(message.from_user.id):
+        return
+    if message.chat.type != "private":
+        await message.answer("Bu buyruq faqat bot bilan yakka chatda ishlaydi.")
+        return
+    text, kb = await _clean_panel()
+    await message.answer(text, reply_markup=kb)
+
+
+@router.callback_query(F.data.startswith("cl:"))
+async def cb_clean(call: types.CallbackQuery) -> None:
+    if not await is_admin(call.from_user.id):
+        await call.answer("Bu bo'lim faqat admin uchun.", show_alert=True)
+        return
+    parts = call.data.split(":")
+    action = parts[1]
+
+    if action == "toggle":
+        on = (await db.get_setting(recorder.KEY_ENABLED, "1")) == "1"
+        await db.set_setting(recorder.KEY_ENABLED, "0" if on else "1")
+        await call.answer("Tozalash o'chirildi" if on else "Tozalash yoqildi")
+    elif action == "h":
+        await db.set_setting(recorder.KEY_HOURS, parts[2])
+        await call.answer(f"Muddat: {parts[2]} soat")
+    elif action == "now":
+        await call.answer("Tozalanmoqda…")
+        done, failed = await recorder.clean_once(call.bot)
+        with contextlib.suppress(TelegramBadRequest):
+            await call.message.answer(
+                f"🧹 Tozalandi: <b>{done}</b> ta o'chirildi"
+                + (f", {failed} tasiga ruxsat yetmadi" if failed else ""))
+    else:
+        await call.answer()
+
+    text, kb = await _clean_panel()
+    with contextlib.suppress(TelegramBadRequest):
+        await call.message.edit_text(text, reply_markup=kb)
+
+
 # ------------------------------------------------------------------- /xabar
 @router.message(Command("xabar", "broadcast"))
 async def cmd_broadcast(message: types.Message, state: FSMContext) -> None:
@@ -297,13 +377,36 @@ async def on_cast_message(message: types.Message, state: FSMContext) -> None:
     await state.update_data(src_chat=message.chat.id, src_msg=message.message_id)
     await state.set_state(Cast.confirm)
 
+    await state.update_data(pin=False)
     count = await _count(target)
-    await message.answer(
-        f"👆 Yuqoridagi xabar <b>{ui.esc(target['label'])}</b> ga yuboriladi.\n"
-        f"📊 Qabul qiluvchilar soni: <b>{count}</b>\n"
-        f"⏱ Taxminiy vaqt: ~{max(1, round(count * SEND_DELAY))} soniya\n\n"
-        "Tasdiqlaysizmi?",
-        reply_markup=ui.kb([[("✅ Yuborish", "ad:go"), ("❌ Bekor", "ad:cancel")]]))
+    await message.answer(_confirm_text(target, count), reply_markup=_confirm_kb(False))
+
+
+def _confirm_text(target: dict, count: int) -> str:
+    return (f"👆 Yuqoridagi xabar <b>{ui.esc(target['label'])}</b> ga yuboriladi.\n"
+            f"📊 Qabul qiluvchilar soni: <b>{count}</b>\n"
+            f"⏱ Taxminiy vaqt: ~{max(1, round(count * SEND_DELAY))} soniya\n\n"
+            "Tasdiqlaysizmi?")
+
+
+def _confirm_kb(pin: bool) -> types.InlineKeyboardMarkup:
+    return ui.kb([
+        [("📌 Qadab qo'yish: " + ("HA ✅" if pin else "yo'q"), "ad:pin")],
+        [("✅ Yuborish", "ad:go"), ("❌ Bekor", "ad:cancel")],
+    ])
+
+
+@router.callback_query(F.data == "ad:pin")
+async def cb_pin_toggle(call: types.CallbackQuery, state: FSMContext) -> None:
+    if not await is_admin(call.from_user.id):
+        await call.answer()
+        return
+    data = await state.get_data()
+    pin = not data.get("pin", False)
+    await state.update_data(pin=pin)
+    with contextlib.suppress(TelegramBadRequest):
+        await call.message.edit_reply_markup(reply_markup=_confirm_kb(pin))
+    await call.answer("📌 Qadaladi" if pin else "Qadalmaydi")
 
 
 async def _count(target: dict) -> int:
@@ -329,6 +432,7 @@ async def cb_go(call: types.CallbackQuery, state: FSMContext) -> None:
         return
     data = await state.get_data()
     target, src_chat, src_msg = data.get("target"), data.get("src_chat"), data.get("src_msg")
+    pin = bool(data.get("pin"))
     await state.clear()
     if not target or not src_msg:
         await call.answer("Xabar topilmadi, /xabar dan qayta boshlang.", show_alert=True)
@@ -336,14 +440,14 @@ async def cb_go(call: types.CallbackQuery, state: FSMContext) -> None:
     await call.answer("Yuborish boshlandi")
     with contextlib.suppress(TelegramBadRequest):
         await call.message.edit_text("📤 Yuborilmoqda…")
-    bg.spawn(_run_cast(call.bot, call.message.chat.id,
-                                  call.message.message_id, target, src_chat, src_msg))
+    bg.spawn(_run_cast(call.bot, call.message.chat.id, call.message.message_id,
+                       target, src_chat, src_msg, pin))
 
 
 async def _run_cast(bot: Bot, report_chat: int, report_msg: int, target: dict,
-                    src_chat: int, src_msg: int) -> None:
+                    src_chat: int, src_msg: int, pin: bool = False) -> None:
     targets = await _recipients(target)
-    sent = failed = blocked = 0
+    sent = failed = blocked = pinned = 0
     started = time.monotonic()
 
     async def progress(final: bool = False) -> None:
@@ -353,6 +457,7 @@ async def _run_cast(bot: Bot, report_chat: int, report_msg: int, target: dict,
                 + f"{ui.progress_bar(sent + failed + blocked, len(targets), 12)} "
                 + f"{sent + failed + blocked}/{len(targets)}\n\n"
                 + f"✅ Yetkazildi: <b>{sent}</b>\n"
+                + (f"📌 Qadaldi: <b>{pinned}</b>\n" if pin else "")
                 + (f"🚫 Bloklagan: <b>{blocked}</b>\n" if blocked else "")
                 + (f"⚠️ Xato: <b>{failed}</b>\n" if failed else "")
                 + f"⏱ {ui.fmt_time(elapsed)}")
@@ -361,9 +466,11 @@ async def _run_cast(bot: Bot, report_chat: int, report_msg: int, target: dict,
 
     for i, chat_id in enumerate(targets, 1):
         try:
-            await bot.copy_message(chat_id=chat_id, from_chat_id=src_chat,
-                                   message_id=src_msg)
+            copied = await bot.copy_message(chat_id=chat_id, from_chat_id=src_chat,
+                                            message_id=src_msg)
             sent += 1
+            if pin and await _pin(bot, chat_id, copied.message_id):
+                pinned += 1
         except TelegramRetryAfter as exc:
             await asyncio.sleep(exc.retry_after + 1)
             try:
@@ -384,4 +491,25 @@ async def _run_cast(bot: Bot, report_chat: int, report_msg: int, target: dict,
         await asyncio.sleep(SEND_DELAY)
 
     await progress(final=True)
-    log.info("Broadcast tugadi: %s ✅ / %s 🚫 / %s ⚠️", sent, blocked, failed)
+    log.info("Broadcast tugadi: %s ✅ / %s 📌 / %s 🚫 / %s ⚠️",
+             sent, pinned, blocked, failed)
+
+
+async def _pin(bot: Bot, chat_id: int, message_id: int) -> bool:
+    """Xabarni qadaydi. Bot admin bo'lmasa yoki huquqi yetmasa — jim o'tadi."""
+    try:
+        await bot.pin_chat_message(chat_id=chat_id, message_id=message_id,
+                                   disable_notification=True)
+        await db.mark_pinned(chat_id, message_id)
+        return True
+    except TelegramRetryAfter as exc:
+        await asyncio.sleep(exc.retry_after + 1)
+        with contextlib.suppress(TelegramAPIError):
+            await bot.pin_chat_message(chat_id=chat_id, message_id=message_id,
+                                       disable_notification=True)
+            await db.mark_pinned(chat_id, message_id)
+            return True
+        return False
+    except TelegramAPIError as exc:
+        log.info("qadab bo'lmadi (%s): %s", chat_id, exc)
+        return False

@@ -614,6 +614,80 @@ async def cmd_group_top(message: types.Message) -> None:
     await message.answer("\n".join(lines))
 
 
+# -------------------------------------------------------------------- fayllar
+KIND_ICON = {"document": "📄", "photo": "🖼", "video": "🎬",
+             "audio": "🎵", "voice": "🎤", "animation": "🎞"}
+
+
+def _msg_link(chat_id: int, message_id: int) -> str | None:
+    """Supergruhdagi xabarga havola (-100 prefiksi olib tashlanadi)."""
+    text = str(chat_id)
+    if not text.startswith("-100"):
+        return None
+    return f"https://t.me/c/{text[4:]}/{message_id}"
+
+
+@router.message(Command("fayllar", "files"), GROUP)
+async def cmd_files(message: types.Message) -> None:
+    rows = await db.chat_files(message.chat.id, 30)
+    if not rows:
+        await message.answer(
+            "📎 <b>Bu guruhda bot yuborgan fayl topilmadi.</b>\n\n"
+            "<i>Telegram botga chat tarixini qidirishga ruxsat bermaydi — "
+            "shuning uchun bot faqat o'zi yozib borgan fayllarni ko'rsata oladi. "
+            "Bu ro'yxat shu funksiya qo'shilgandan keyingi fayllardan yig'iladi.</i>")
+        return
+
+    lines = [f"📎 <b>Bot yuborgan fayllar</b> — {len(rows)} ta\n"]
+    rows_kb: list[list[tuple[str, str]]] = []
+    for i, r in enumerate(rows, 1):
+        icon = KIND_ICON.get(r["kind"], "📎")
+        name = r["file_name"] or r["kind"]
+        when = (r["sent_at"] or "")[:16].replace("T", " ")
+        link = _msg_link(r["chat_id"], r["message_id"])
+        title = f"{icon} <b>{ui.esc(ui.shorten(name, 45))}</b>"
+        lines.append(f"{i}. " + (f'<a href="{link}">{title}</a>' if link else title)
+                     + f"\n   <i>{when}</i>")
+        if r["file_id"]:
+            rows_kb.append([(f"{icon} {ui.shorten(name, 28)}",
+                             f"gf:{r['chat_id']}:{r['message_id']}")])
+
+    lines.append("\n<i>Faylni qayta olish uchun quyidagi tugmani bosing.</i>")
+    await message.answer("\n".join(lines)[:4000],
+                         reply_markup=ui.kb(rows_kb[:10]) if rows_kb else None,
+                         disable_web_page_preview=True)
+
+
+@router.callback_query(F.data.startswith("gf:"))
+async def cb_file(call: types.CallbackQuery) -> None:
+    _, chat_id, msg_id = call.data.split(":")
+    row = await db.fetch_one(
+        "SELECT * FROM sent_messages WHERE chat_id=? AND message_id=?",
+        (int(chat_id), int(msg_id)))
+    if not row or not row["file_id"]:
+        await call.answer("Fayl topilmadi.", show_alert=True)
+        return
+    kind, file_id = row["kind"], row["file_id"]
+    caption = f"📎 {ui.esc(row['file_name'] or '')}"
+    try:
+        if kind == "photo":
+            await call.message.answer_photo(file_id, caption=caption)
+        elif kind == "video":
+            await call.message.answer_video(file_id, caption=caption)
+        elif kind == "audio":
+            await call.message.answer_audio(file_id, caption=caption)
+        elif kind == "voice":
+            await call.message.answer_voice(file_id, caption=caption)
+        elif kind == "animation":
+            await call.message.answer_animation(file_id, caption=caption)
+        else:
+            await call.message.answer_document(file_id, caption=caption)
+        await call.answer("Yuborildi")
+    except TelegramAPIError:
+        await call.answer("Faylni qayta yuborib bo'lmadi (eskirgan bo'lishi mumkin).",
+                          show_alert=True)
+
+
 # ----------------------------------------------------------------------- stop
 @router.message(Command("stop"), GROUP)
 async def cmd_group_stop(message: types.Message) -> None:

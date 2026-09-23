@@ -38,12 +38,26 @@ class FakeSession:
         self.calls = []          # (method_name, method_obj, result)
         self.messages = {}       # message_id -> matn
         self.polls = {}          # poll_id -> SendPoll
+        self._middlewares = []   # haqiqiy sessiyadagidek so'rov middleware'lari
 
-    async def __call__(self, bot, method, timeout=None):
+    def middleware(self, mw):
+        """aiogram BaseSession.middleware() ning soddalashtirilgan ko'rinishi."""
+        self._middlewares.append(mw)
+        return mw
+
+    async def _base(self, bot, method):
         name = type(method).__name__
         result = self._handle(bot, method, name)
         self.calls.append((name, method, result))
         return result
+
+    async def __call__(self, bot, method, timeout=None):
+        handler = self._base
+        for mw in reversed(self._middlewares):
+            def wrap(b, m, _mw=mw, _next=handler):
+                return _mw(_next, b, m)
+            handler = wrap
+        return await handler(bot, method)
 
     async def close(self):
         pass
@@ -69,7 +83,8 @@ class FakeSession:
         if name == "GetMe":
             return ME
         if name in ("SetMyCommands", "DeleteWebhook", "AnswerCallbackQuery",
-                    "SetMyDescription", "Close"):
+                    "SetMyDescription", "Close", "PinChatMessage",
+                    "UnpinChatMessage", "DeleteMessage"):
             return True
         if name == "SendMessage":
             return self._msg(m.chat_id, m.text, m.reply_markup, bot=bot)
@@ -130,9 +145,11 @@ class FakeSession:
 
 def make(dp_routers):
     import access
+    import recorder
     session = FakeSession()
     bot = Bot("8651732102:TEST", default=DefaultBotProperties(parse_mode=ParseMode.HTML),
               session=session)
+    session.middleware(recorder.SentRecorder())
     dp = Dispatcher(storage=MemoryStorage())
     dp.update.outer_middleware(access.ChatTracker())
     for r in dp_routers:

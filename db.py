@@ -106,6 +106,26 @@ CREATE TABLE IF NOT EXISTS collection_shares (
 );
 CREATE INDEX IF NOT EXISTS idx_cs_chat ON collection_shares(chat_id);
 
+CREATE TABLE IF NOT EXISTS sent_messages (
+    chat_id    INTEGER,
+    message_id INTEGER,
+    kind       TEXT,
+    file_id    TEXT DEFAULT '',
+    file_name  TEXT DEFAULT '',
+    caption    TEXT DEFAULT '',
+    pinned     INTEGER DEFAULT 0,
+    keep       INTEGER DEFAULT 0,
+    sent_at    TEXT,
+    PRIMARY KEY (chat_id, message_id)
+);
+CREATE INDEX IF NOT EXISTS idx_sent_time ON sent_messages(sent_at);
+CREATE INDEX IF NOT EXISTS idx_sent_chat ON sent_messages(chat_id, kind);
+
+CREATE TABLE IF NOT EXISTS bot_settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT
+);
+
 CREATE TABLE IF NOT EXISTS prefs (
     user_id       INTEGER PRIMARY KEY,
     collection_id INTEGER,
@@ -240,6 +260,76 @@ async def broadcast_groups() -> list[aiosqlite.Row]:
     return await fetch_all(
         """SELECT chat_id, title FROM chats
            WHERE type IN ('group','supergroup') ORDER BY last_seen DESC""")
+
+
+# ------------------------------------------------- bot yuborgan xabarlar
+FILE_KINDS = ("document", "photo", "video", "audio", "voice", "animation")
+
+
+async def record_sent(chat_id: int, message_id: int, kind: str, file_id: str = "",
+                      file_name: str = "", caption: str = "") -> None:
+    await execute(
+        """INSERT INTO sent_messages(chat_id, message_id, kind, file_id, file_name,
+                                     caption, sent_at)
+           VALUES(?,?,?,?,?,?,?)
+           ON CONFLICT(chat_id, message_id) DO NOTHING""",
+        (chat_id, message_id, kind, file_id or "", (file_name or "")[:200],
+         (caption or "")[:300], now()))
+
+
+async def mark_pinned(chat_id: int, message_id: int) -> None:
+    """Qadalgan xabarni belgilaydi (yozuv bo'lmasa — yaratadi)."""
+    await execute(
+        """INSERT INTO sent_messages(chat_id, message_id, kind, pinned, keep, sent_at)
+           VALUES(?,?,'copy',1,1,?)
+           ON CONFLICT(chat_id, message_id) DO UPDATE SET pinned=1, keep=1""",
+        (chat_id, message_id, now()))
+
+
+async def forget_message(chat_id: int, message_id: int) -> None:
+    await execute("DELETE FROM sent_messages WHERE chat_id=? AND message_id=?",
+                  (chat_id, message_id))
+
+
+async def chat_files(chat_id: int, limit: int = 50) -> list[aiosqlite.Row]:
+    marks = ",".join("?" * len(FILE_KINDS))
+    return await fetch_all(
+        f"""SELECT * FROM sent_messages
+            WHERE chat_id=? AND kind IN ({marks})
+            ORDER BY sent_at DESC LIMIT ?""",
+        (chat_id, *FILE_KINDS, limit))
+
+
+async def expired_messages(before: str, limit: int = 200) -> list[aiosqlite.Row]:
+    """Tozalash uchun: guruhlardagi, qadalmagan va saqlanmagan eski xabarlar."""
+    return await fetch_all(
+        """SELECT s.chat_id, s.message_id, s.kind FROM sent_messages s
+           JOIN chats c ON c.chat_id = s.chat_id
+           WHERE s.sent_at < ? AND s.pinned = 0 AND s.keep = 0
+             AND c.type IN ('group','supergroup')
+           ORDER BY s.sent_at LIMIT ?""", (before, limit))
+
+
+async def sent_summary() -> dict:
+    total = await fetch_one("SELECT COUNT(*) AS n FROM sent_messages")
+    pinned = await fetch_one("SELECT COUNT(*) AS n FROM sent_messages WHERE pinned=1")
+    marks = ",".join("?" * len(FILE_KINDS))
+    files = await fetch_one(
+        f"SELECT COUNT(*) AS n FROM sent_messages WHERE kind IN ({marks})", FILE_KINDS)
+    return {"total": total["n"], "pinned": pinned["n"], "files": files["n"]}
+
+
+# ------------------------------------------------------ global sozlamalar
+async def get_setting(key: str, default: str = "") -> str:
+    row = await fetch_one("SELECT value FROM bot_settings WHERE key=?", (key,))
+    return row["value"] if row else default
+
+
+async def set_setting(key: str, value) -> None:
+    await execute(
+        """INSERT INTO bot_settings(key, value) VALUES(?,?)
+           ON CONFLICT(key) DO UPDATE SET value=excluded.value""",
+        (key, str(value)))
 
 
 def iso_ago(days: float = 0, hours: float = 0) -> str:

@@ -388,6 +388,89 @@ async def main():
     await dp.feed_update(bot, H.upd_call("act:grp", begona, priv, fmid))
     check("begona bo'limlarni ocha olmaydi", S.messages[fmid] == before)
 
+    print("\n━━━ 11c. QADASH / FAYLLAR / TOZALASH ━━━")
+    import recorder
+    # yozib borish: guruhga yuborilgan xabarlar bazaga tushdimi
+    rec = await db.fetch_one(
+        "SELECT COUNT(*) n FROM sent_messages WHERE chat_id=-1001")
+    check("guruh xabarlari yozib borilmoqda", rec["n"] > 0, str(rec["n"]))
+
+    # broadcast'da qadash
+    await dp.feed_update(bot, H.upd_message("/xabar", ali, priv))
+    bmid = S.calls[-1][2].message_id
+    await dp.feed_update(bot, H.upd_call("ad:t:one:-1001", ali, priv, bmid))
+    await dp.feed_update(bot, H.upd_message("E'lon: ertaga imtihon", ali, priv))
+    kmid = S.calls[-1][2].message_id
+    kb = [b.callback_data for row in S.calls[-1][1].reply_markup.inline_keyboard
+          for b in row]
+    check("qadash tugmasi bor", "ad:pin" in kb, str(kb))
+    await dp.feed_update(bot, H.upd_call("ad:pin", ali, priv, kmid))
+    npin = sum(1 for k, _, _ in S.calls if k == "PinChatMessage")
+    await dp.feed_update(bot, H.upd_call("ad:go", ali, priv, kmid))
+    await asyncio.sleep(1.2)
+    pins = [m for k, m, _ in S.calls if k == "PinChatMessage"]
+    check("xabar qadaldi", len(pins) == npin + 1, f"{len(pins)} ta")
+    check("to'g'ri guruhda qadaldi", bool(pins) and pins[-1].chat_id == -1001)
+    pinned_row = await db.fetch_one(
+        "SELECT COUNT(*) n FROM sent_messages WHERE chat_id=-1001 AND pinned=1")
+    check("qadalgani bazada belgilandi", pinned_row["n"] >= 1, str(pinned_row["n"]))
+
+    # /fayllar
+    await dp.feed_update(bot, H.upd_message("/fayllar", ali, grp))
+    check("fayl yo'q deb aytadi", "fayl topilmadi" in last_texts(S)[-1],
+          last_texts(S)[-1][:80])
+    await db.record_sent(-1001, 999001, "document", "FILEID1", "maruza.pdf", "")
+    await dp.feed_update(bot, H.upd_message("/fayllar", ali, grp))
+    ftext = last_texts(S)[-1]
+    check("fayllar ro'yxati", "maruza.pdf" in ftext, ftext[:100])
+    check("xabarga havola", "t.me/c/" in ftext)
+    ndoc = sum(1 for k, _, _ in S.calls if k == "SendDocument")
+    await dp.feed_update(bot, H.upd_call("gf:-1001:999001", ali, grp))
+    check("fayl qayta yuborildi",
+          sum(1 for k, _, _ in S.calls if k == "SendDocument") == ndoc + 1)
+
+    # /tozalash
+    await dp.feed_update(bot, H.upd_message("/tozalash", vali, H.chat(102)))
+    check("begona tozalashni ko'rmaydi", "Avtomatik tozalash" not in last_texts(S)[-1])
+    await dp.feed_update(bot, H.upd_message("/tozalash", ali, priv))
+    cl = last_texts(S)[-1]
+    check("tozalash paneli", "Avtomatik tozalash" in cl and "soat" in cl, cl[:80])
+    cmid2 = S.calls[-1][2].message_id
+    await dp.feed_update(bot, H.upd_call("cl:h:12", ali, priv, cmid2))
+    check("muddat o'zgardi",
+          (await db.get_setting(recorder.KEY_HOURS)) == "12",
+          await db.get_setting(recorder.KEY_HOURS))
+    await dp.feed_update(bot, H.upd_call("cl:toggle", ali, priv, cmid2))
+    check("o'chirish tugmasi ishlaydi",
+          (await db.get_setting(recorder.KEY_ENABLED)) == "0")
+    await dp.feed_update(bot, H.upd_call("cl:toggle", ali, priv, cmid2))
+    check("qayta yoqildi", (await db.get_setting(recorder.KEY_ENABLED)) == "1")
+
+    # haqiqiy tozalash: eski xabar o'chadi, qadalgani qoladi
+    await db.execute(
+        "UPDATE sent_messages SET sent_at=? WHERE chat_id=-1001", (db.iso_ago(days=5),))
+    before = await db.fetch_one("SELECT COUNT(*) n FROM sent_messages WHERE chat_id=-1001")
+    ndel = sum(1 for k, _, _ in S.calls if k == "DeleteMessage")
+    done, failed = await recorder.clean_once(bot)
+    check("eski xabarlar o'chirildi", done > 0, f"done={done}")
+    check("DeleteMessage chaqirildi",
+          sum(1 for k, _, _ in S.calls if k == "DeleteMessage") > ndel)
+    left = await db.fetch_all(
+        "SELECT pinned FROM sent_messages WHERE chat_id=-1001")
+    check("qadalgan xabar o'chmadi", all(r["pinned"] == 1 for r in left) and left,
+          f"qolgan={len(left)}")
+    after = await db.fetch_one("SELECT COUNT(*) n FROM sent_messages WHERE chat_id=-1001")
+    check("ro'yxat qisqardi", after["n"] < before["n"], f"{before['n']} -> {after['n']}")
+
+    # o'chiq holatda tozalamasin
+    await db.set_setting(recorder.KEY_ENABLED, "0")
+    await db.record_sent(-1001, 999002, "text", "", "", "eski")
+    await db.execute("UPDATE sent_messages SET sent_at=? WHERE message_id=999002",
+                     (db.iso_ago(days=5),))
+    d2, _ = await recorder.clean_once(bot)
+    check("o'chiq holatda tozalamaydi", d2 == 0, str(d2))
+    await db.set_setting(recorder.KEY_ENABLED, "1")
+
     print("\n━━━ 12. IQ TEST (standart tuzilma + rasmlar) ━━━")
     from handlers import iq as iq_h
     import iq_score, media

@@ -12,7 +12,9 @@ from aiogram.types import BotCommand, BotCommandScopeAllGroupChats
 
 import config
 import access
+import bg
 import db
+import recorder
 import seed
 from handlers import ROUTERS
 
@@ -34,6 +36,7 @@ COMMANDS = [
     BotCommand(command="help", description="❓ Yordam"),
     BotCommand(command="id", description="🆔 ID va admin holati"),
     BotCommand(command="faoliyat", description="📊 Bot faoliyati (admin)"),
+    BotCommand(command="tozalash", description="🧹 Avtomatik tozalash (admin)"),
 ]
 
 
@@ -41,6 +44,7 @@ GROUP_COMMANDS = [
     BotCommand(command="quiz", description="🎯 Klassik guruh testi"),
     BotCommand(command="pro", description="🧠 Pro jang (jamoaviy)"),
     BotCommand(command="reyting", description="🏆 Guruh reytingi"),
+    BotCommand(command="fayllar", description="📎 Bot yuborgan fayllar"),
     BotCommand(command="stop", description="⏹ O'yinni to'xtatish"),
 ]
 
@@ -48,6 +52,7 @@ GROUP_COMMANDS = [
 async def main() -> None:
     bot = Bot(config.BOT_TOKEN,
               default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    bot.session.middleware(recorder.SentRecorder())
     dp = Dispatcher(storage=MemoryStorage())
     dp.update.outer_middleware(access.ChatTracker())
     for router in ROUTERS:
@@ -63,6 +68,7 @@ async def main() -> None:
     await bot.set_my_commands(GROUP_COMMANDS,
                               scope=BotCommandScopeAllGroupChats())
     await bot.delete_webhook(drop_pending_updates=True)
+    bg.spawn(recorder.sweeper(bot))
     try:
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
     finally:

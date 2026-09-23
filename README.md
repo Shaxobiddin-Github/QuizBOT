@@ -76,7 +76,22 @@ bloklaganlar), testlar (sessiyalar, rejimlar kesimi, javoblar, umumiy aniqlik),
 guruhlar (a'zolar, o'yinlar, ochilgan bazalar, oxirgi faollik), bazalar va
 eng faol foydalanuvchilar. To'rt bo'lim tugmalar bilan almashtiriladi.
 
-`/xabar` — admin uchun. Qabul qiluvchi: barcha foydalanuvchilar, barcha guruhlar
+`/tozalash` — admin uchun avtomatik tozalash: bot guruhlarga yuborgan xabarlar
+(test savollari, natijalar, e'lonlar) belgilangan muddatdan keyin o'chiriladi.
+Muddat 1/3/6/12/24/48 soat, yoqib-o'chirish va «hozir tozalash» tugmasi bor.
+📌 Qadalgan xabarlar hech qachon o'chirilmaydi.
+
+`/fayllar` — guruhda: bot o'sha guruhga yuborgan fayllar ro'yxati, xabarga
+havola va faylni qayta olish tugmasi bilan.
+
+> **Cheklov:** Telegram Bot API botga chat tarixini qidirishga ruxsat bermaydi.
+> Shuning uchun `/fayllar` va tozalash faqat bot o'zi yozib borgan xabarlar
+> ustida ishlaydi — ya'ni bu funksiya qo'shilgandan keyingilari. Bundan tashqari
+> Telegram 48 soatdan eski xabarni o'chirishga ruxsat bermasligi mumkin.
+
+`/xabar` — admin uchun. Yuborishdan oldin 📌 **«Qadab qo'yish»** ni yoqsangiz,
+xabar har bir guruhda avtomatik qadaladi (bot admin bo'lishi va «xabar qadash»
+huquqiga ega bo'lishi kerak). Qabul qiluvchi: barcha foydalanuvchilar, barcha guruhlar
 yoki bitta tanlangan guruh. Matn, rasm, video, fayl — hammasi `copyMessage` orqali
 o'z ko'rinishida yetkaziladi. Jonli progress, botni bloklaganlar avtomatik belgilanadi.
 
@@ -109,8 +124,8 @@ Nazoratni butunlay o'chirish: `crontab -e` → ikkala qatorni o'chiring.
 ## Buyruqlar
 
 **Shaxsiy:** `/start` `/quiz` `/pro` `/iq` `/bazalar` `/qoshish` `/stats` `/stop` `/help` `/id`
-**Admin:** `/faoliyat` (statistika), `/xabar` (ommaviy xabar), `/bekor`
-**Guruh:** `/quiz` `/pro` `/reyting` `/stop`
+**Admin:** `/faoliyat` (statistika), `/xabar` (ommaviy xabar), `/tozalash` (avtomatik tozalash), `/bekor`
+**Guruh:** `/quiz` `/pro` `/reyting` `/fayllar` `/stop`
 
 ## Savol qo'shish formatlari
 
@@ -153,6 +168,7 @@ handlers/
   iq.py           3-rejim (IQ test)
   admin.py        ommaviy xabar (broadcast)
 access.py         kirish huquqi, guruh a'zoligi keshi
+recorder.py       yuborilgan xabarlarni yozish va avtomatik tozalash
 data/quiz.db      baza
 data/default_questions.json   197 ta test savoli
 data/iq_questions.json        52 ta matnli IQ savoli
