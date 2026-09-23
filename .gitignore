@@ -1,0 +1,15 @@
+# Maxfiy sozlamalar — hech qachon commit qilinmaydi
+.env
+
+# Foydalanuvchi ma'lumotlari
+data/*.db
+data/*.db-wal
+data/*.db-shm
+
+# Ish fayllari
+venv/
+__pycache__/
+*.pyc
+bot.log
+bot.log.tmp
+bot.lock

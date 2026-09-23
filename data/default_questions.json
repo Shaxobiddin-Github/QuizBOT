@@ -1,0 +1,2171 @@
+{
+ "title": "Psixologiya va Pedagogika",
+ "description": "Default baza — 197 ta test savoli",
+ "questions": [
+  {
+   "question": "Darsning boshlanishini tashkil etish uy vazifasini tekshirish, darsning maqsadi va vazifasini bayon qilish, yangi materiallarni tushuntirish, mustahkamlash, darsga yakun yasash va uyga vazifa berish» tuzilishidagi darsning tipini ko’rsating:",
+   "options": [
+    "Kombinatsion (aralash) dars",
+    "Bilimlarni takrorlash va mustahkamlash darsi",
+    "Yangi bilimlarni o’rganish darsi",
+    "Umumiylashtirish darsi"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "«Pedagogiya, ya’ni bola tarbiyasining fani demakdir». Pedagogikaga bu ta’rif kim tomonidan berilgan?",
+   "options": [
+    "Avloniy",
+    "Shakuriy",
+    "Hamza",
+    "S.Ayniy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "“Takrorlash bilimning asosidir”.Ushbu ibora qaysi pedagog olimgategishli?",
+   "options": [
+    "Ushinskiy",
+    "Shakuriy",
+    "Hamza",
+    "Komenskiy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "“Buyuk didaktika” asarining mullifi?",
+   "options": [
+    "Komenskiy",
+    "Ushinskiy",
+    "Suxomlinskiy",
+    "Makarenko"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "“Milliy mafkurani shakllantirishdagi eng katta manba- bu haqqoniy yoritilgan tarixdir”. Ushbu ibora Islom Karimovning qaysi asarida bayon etilgan?",
+   "options": [
+    "Milliy istiqlol mafkurasi-xalq e’tiqodi va buyuk kelajakka ishonchdir",
+    "O’zbek xalqi hech qachon hech kimga qaram bo’lmaydi",
+    "O’zbekiston XXI asr bo’sag’asida",
+    "O’zbekistonning o’z istiqlol va taraqqiyot yo’li"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "“Ta’lim beruvchi, rivojlantiruvchi va tarbiyalovchi” tushunchalari didaktikaning qaysi jihatini yoritadi?",
+   "options": [
+    "Ta’lim funktsiyalari",
+    "Ta’lim natijasi",
+    "Ta’lim vositalari",
+    "Ta’lim metodlari"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "“O’zbekiston Respublikasida umumiy o’rta ta’limni tashkil etish to’g’risida”gi hujjat qaysi javobda to’g’ri ko’rsatilgan ?",
+   "options": [
+    "O’zbekiston Respublikasi Vazirlar Mahkamasining 1998 yil 13 maydagi 203-sonli qarori",
+    "O’zbekiston Respublikasining 1997 yilda chiqqan Qonuni",
+    "O’zbekiston Respublikasi Oliy Majlisining qarori",
+    "O’zbekiston Respublikasi Konstitutsiyasi"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "“Pedagogika” atamasi ma’nosi nimani anglatadi?",
+   "options": [
+    "Bolani etaklayman",
+    "Bolani o’qitaman",
+    "Bolani tarbiyalayman",
+    "Bolani tarbiyalayman va o’qitaman"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "“Donishnoma” asarining muallifi kim?",
+   "options": [
+    "Ibn Sino",
+    "Al-Forobiy",
+    "Al-Matrudiy",
+    "Al-Farg’oniy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "“Yer sur’ati”, “Al jabr va al muqobala”asarlarining muallifi kim?",
+   "options": [
+    "Al-Xorazmiy",
+    "Forobiy",
+    "Beruniy",
+    "Umar Hayyom"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "“Hibat ul-haqoyiq” asarining muallifi kim?",
+   "options": [
+    "Ahmad Yugnakiy",
+    "Yusuf Xos Hojib",
+    "Alisher Navoiy",
+    "Kaykovus"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "2007 yil qanday yil deb e’lon qilingan?",
+   "options": [
+    "Ijtimoiy himoya yili",
+    "Oila yili;",
+    "Mahalla yili;",
+    "Tadbirkorlar yili"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Amir Temur davlat ishlarini idora etish qoidalarini qaysi asarida batafsil bayon etgan?",
+   "options": [
+    "Temur tuzuklarida",
+    "Malfuzoti Temuriy",
+    "Voqi oti Temuriy”",
+    "Sohibqiron Temur"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Bolalar dastlab “Vatan”, “xalq” tushunchalarining mohiyatini qayerda o’zlashtiradi?",
+   "options": [
+    "Maktabgacha ta’lim muassasasida",
+    "Oilada",
+    "Maktabda",
+    "Mahallada"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Qadim zamonlardan mavjud bo‘lgan o‘qitishning eng qadimgi shakli – bu:",
+   "options": [
+    "Individual",
+    "Sinf-dars",
+    "Ma’ruza-seminar",
+    "Laboratoriya"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Dastlabki yangi usul maktabi Turkistonning qaysi shahrida ochilgan edi?",
+   "options": [
+    "Andijonda",
+    "Marg’ilronda",
+    "Toshkentda",
+    "Chimkentda"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Didaktika – bu ...",
+   "options": [
+    "Ta’lim nazariyasi",
+    "Rivojlantirish nazariyasi",
+    "Tarbiya nazariyasi",
+    "Ta’lim va tarbiya nazariyalari"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Didaktika deb nimaga aytiladi?",
+   "options": [
+    "Didaktika bu o’qitish mazmuni, metodlari va tashkiliy shakllarini ilmiy asoslab beruvchi o’qitish pedagogik nazariyasi,pedagogikaning sohasi",
+    "Didaktika bu shaxsning rivojlanishi qonuniyatlari haqidagi fandir",
+    "Didaktika bu bola shaxsini shakllantirish qonuniyatlari haqidagi fan",
+    "Didaktika tarbiyalovchi o’qitish jarayonini o’rganadi"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Didaktikaning asosiy kategoriyalari qaysi javobda to‘g‘ri ko‘rsatilgan?",
+   "options": [
+    "Darso’tish, bilim berish, o’qitish, malaka, ko’nikma, shakl, metod, vosita, natijalar",
+    "Ta’lim berish, tarbiyalash, rivojlantirish",
+    "Bilim, ko’nikma, malaka",
+    "Rivojlantirish, mustahkamlash, takrorlash"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Dars, praktikum, seminar, amaliy mashg‘ulot va konsultatsiyalar – bu:",
+   "options": [
+    "Ta’limni tashkil etish shakllari",
+    "Ta’lim usullari",
+    "Ta’lim qonuniyatlari va tamoyillari",
+    "Ta’lim vositalari"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "DTSni bajarish qanday ta’lim muassasalari uchun majburiydir?",
+   "options": [
+    "O’zbekiston Respublikasidagi barcha ta’lim muassasalari uchun",
+    "Davlat ta’lim muassasalari uchun",
+    "Nodavlat ta’lim muassasalari uchun",
+    "Xalq ta’limi hamda Oliy va o’rta maxsus ta’lim vazirliklari tasarrufidagi ta’lim muassasalari uchun"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Jalloliddin Davoniyning “Axloqi Jaloliy” asari uch qismdan iborat. Uning birinchi qismi qaysi fanga taaluqli?.",
+   "options": [
+    "Ahloq ilmiga",
+    "Ta’limga",
+    "Oila tarbiyasiga",
+    "Iqtisodiyotga"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Jahon ilmida “Muallimi soniy” (“Ikkinchi muallim”) nomiga musharraf bo’lgan donishmand kim ?",
+   "options": [
+    "Abu Nasr Farobiy",
+    "Konfutsiy",
+    "Imom Al-Buxoriy",
+    "Imom At-Termiziy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Zardushtiylik axloqining asosi bu.",
+   "options": [
+    "Ezgu fikr, ezgu kalom, ezgu amal",
+    "Ezgu niyat, ezgu kayfiyat, ezgu amal",
+    "Falsafa, siyosat, e’tikod",
+    "Saodat, e’tiqod , tafakkur"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "I.A.Karimovning O’zbekiston Respublikasi IX sessiyasida (1997) so’zlagan «Barkamol avlod -O’zbekiston taraqqiyotining poydevori» nutqida tarbiyaning maqsadi qanday ifodalanadi?",
+   "options": [
+    "Barkamol, erkin fikrlovchi shaxsni tarbiyalash",
+    "Tadbirkor shaxsni tarbiyalash",
+    "Umuminsoniy va milliy tarbiya",
+    "Mehnatsevarlik tarbiyasi"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Ibtidoiy jamiyat davrida kishilarning mehnat faoliyati uch guruhga bo’lingan. Bular qaysi javobda to‘g‘ri ko‘rsatilgan?",
+   "options": [
+    "Bolalar va o’smirlar,hayot va mehnatda to’la ishtirok etuvchilar, keksalar",
+    "Go’daklar, bolalar va o’smirlar hamda keksalar",
+    "Yoshlar, yigitlar, faxriylar",
+    "O’smirlar, hayot va mehnatda to’la ishtirok etuvchilar, ayollar"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Qaysi asarda dehqonlarga nisbatan: “O‘zing bular bilan aralashgin, qo‘shilgin, tilda yaxshi so‘zla, yuzungni ochiq tut”deya ta’rif berilgan",
+   "options": [
+    "Qutadg‘u bilik",
+    "Hayrat ul-abror",
+    "Mahbub ul-qulub",
+    "Hibat ul-haqoyiq"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Ijtimoiy institutlarga nimalar kiradi?",
+   "options": [
+    "Oila, ta’lim, madaniyat, din, mahalla",
+    "Oliy o’quv yurtlari",
+    "Korxonalar, viloyatlar, jamoa",
+    "Tarbiya muassasalari."
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Quyidagilardan qaysilari jazolash metodlariga kiradi?",
+   "options": [
+    "Tanbeh berish, uyaltirish, ogohlantirish",
+    "O‘z-o‘zini baholash, uyaltirish, musobaqa",
+    "Mashq , pedagoik talab, xayfsan berish",
+    "Ma’ruza, o‘git, etik suhbat"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Ijtimoiylashuv jarayoni nima?",
+   "options": [
+    "Ijtimoiylashuv shaxsning ijtimoiy taraqqiyot asosida belgilangan madaniyat, axloq, bilim, dunyoqarashlarni o’zida mujassamlashtirishdir",
+    "Ijtimoiylashuv - bola shaxsini oiladagi tarbiyasini tushunamiz",
+    "Ijtimoiylashuv - oila, maxalla",
+    "Mahallada shakllanish, tarkib topish jarayonidir"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Aniqlash va o‘lchash nima deb ataladi",
+   "options": [
+    "Tekshirish",
+    "Baholash",
+    "Nazorat",
+    "Hisobga olish"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Imom al-Buxoriy to’plagan hadislar soniqanchani tashkil etadi?",
+   "options": [
+    "600 ming",
+    "300 ming",
+    "500 ming",
+    "100 ming"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "“Innovatsiya” tushunchasining mazmunini aniqlang.",
+   "options": [
+    "Yangilanish, o’zgarishni amalga joriy etish, kiritish jarayoni va faoliyati",
+    "Chambarchas bog’liq, butun yagona",
+    "Fikrlash qobiliyati, tushunish",
+    "Xamkorlikda o’qitish"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Inson kamolotida uch narsa- “irsiyat, muhit, tarbiya” muhim rol o’ynaydi degan fikrni ilk bor ilgari surgan olimning nomi qaysi javobda to‘g‘ri ko‘rsatilgan?",
+   "options": [
+    "Beruniy",
+    "Forobiy",
+    "Ibn Sino",
+    "Al-Motrudiy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Inson tarbiyasi va rivojlanishi haqidagi fan bu:",
+   "options": [
+    "Pedagogika",
+    "Psixologiya",
+    "Tarix",
+    "Filosofiya"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Insonning biologik mohiyatini o’zida aks ettiruvchi tushuncha – bu:",
+   "options": [
+    "Individ",
+    "Shaxs",
+    "Sub’yekt",
+    "Inson"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Islom Karimov qaysi asarida “Kadrlar tanlashda vatanparvarlik, xalqparvarlik tuyg’usi bugunjudakattaahamiyatgaegadir” deb ta’kidlagan?",
+   "options": [
+    "Buyuk maqsad yo’lidan og’ishmaylik",
+    "Istiqlol va ma’naviyat",
+    "O’zbekiston XXI asrga intilmoqda",
+    "Milliy istiqlol mafkurasi—xalq e’tiqodi va buyuk kelajakka ishonchdir"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Islom Karimovning: “Bizga bitiruvchilar emas, maktab ta’lim va tarbiyasini ko’rgan shaxslar kerak”, -degan iborasi qayd etilgan asarni aniqlang",
+   "options": [
+    "Barkamol avlod O’zbekiston taraqqiyoti poydevori",
+    "Barkamol avlod orzusi",
+    "Buyuk maqsad yo’lidan og’ishmaylik",
+    "O’zbekiston kelajagi buyuk davlat"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Kaykovusning “Qobusnoma” asari necha bobdan iborat ?",
+   "options": [
+    "44 bob",
+    "41bob",
+    "39 bob",
+    "37bob"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Qaysi javobda Kadrlar tayyorlash milliy modelining tarkibiy qismlari to’g’ri ko’rsatilgan?",
+   "options": [
+    "Shaxs, davlat va jamiyat, uzluksiz ta’lim, fan, ishlab chiqarish",
+    "Davlat va jamiyat, uzluksiz ta’lim, fan, madaniyat",
+    "Oila, uzluksiz ta’lim, fan, madaniya, ishlab chiqarish",
+    "Madaniyat, shaxs, davlat va jamiyat, ishlab chiqarish"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Qaysi olim o’qitishni jismoniy mashqlar bilan qo’shib olib borish zarurligini ta’kidlaydi.",
+   "options": [
+    "Ibn Sino",
+    "Beruniy",
+    "Al-Farg’oniy",
+    "Mahmud Qoshg’ariy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Qaysi olimning asarida pedagogika alohida fan maqomiga ega bo’ldi?",
+   "options": [
+    "Yan Amos Komenskiy «Buyuk didaktika»",
+    "K.D.Ushinskiy “Xalqichilik g’oyasi”",
+    "Yusuf Xos Hojib «Qutadg’u bilig.»",
+    "A.Navoiy “Mahbub ul-qulub”"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Qanday ta’lim turlari uchun DTS joriy etiladi?",
+   "options": [
+    "Umumiy o’rta, o’rta maxsus, kasb-xunar, oliy ta’lim",
+    "Maktabgacha, umumiy o’rta, o’rta maxsus, kasb-xunar, oliy ta’lim",
+    "Umumiy o’rta, maktabdan tashqari ta’lim, oliy ta’lim",
+    "Ta’lim turlarining barchasi uchun"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Quyidagilardan qaysi biri maktabda o’z-o’zini boshqarishning yuqori organi hisoblanadi?",
+   "options": [
+    "Maktab jamoasining konferentsiyasi",
+    "Metodik kengash",
+    "Maktab kengashi",
+    "Pedagogik kengash"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Quyidagilardan qaysi biri pedagogikaning asosiy tushunchalari (kategoriyalari) hisoblanadi?",
+   "options": [
+    "Tarbiya, ta’lim, ma’lumot",
+    "Bilim, ko’nikma, malaka",
+    "Irsiyat, muhit, tarbiya",
+    "Etuklik, rivojlanish, tarbiya"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Ko’nikma va malakalarni shakllantirishda asosiy sanaluvchi metod, bu:",
+   "options": [
+    "Mashq",
+    "Namoyish",
+    "Muammoli",
+    "Didaktik o’yin"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Majburiy standartli tekshiruv ishlari qaysi nazorat tarkibiga kiradi?",
+   "options": [
+    "Joriy nazorat",
+    "Oraliq nazorat",
+    "Maxsus nazorat",
+    "Bosqichli nazorat"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "O‘qitish jarayoni nima",
+   "options": [
+    "Bu ikki yoqlama boshqariladigan maqsadga muvofiq pedagogik jarayon",
+    "Bu – bilim ,ko‘nikma, malaka hosil qilish jarayoni",
+    "O‘quvchilarning mustaqil ishlarini boshqarishda o‘qituvchilarning rahbarligi",
+    "O‘qituvchining tartiblangan faoliyati"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Pedagogikaning obyekti – bu...",
+   "options": [
+    "Bola, inson",
+    "Tarbiya jarayoni",
+    "Pedagogik faoliyat",
+    "Pedagogik aksiologiya"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Malaka – bu:",
+   "options": [
+    "Ongli xatti-harakatning avtomatlashtirilgan, bexato bajariladigan harakati",
+    "Bilimlarni amalda bir necha bor qo’llanilishi orqali sodir bo’ladi",
+    "Mehnat qilish jarayonida hosil bo’lgan ko’nikmalar natijasi hisoblanadi",
+    "Insonni uzoq yillar davomida o’zlashtira olgan bilimlar majmuasi"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Mamlakatimizda qaysi yil “Oila yili” debe’lon qilingan?",
+   "options": [
+    "1998 yil",
+    "1996 yil",
+    "1997 yil",
+    "1999 yil"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Milliy pedagogikamizning bosh metodologiyasi nima ?",
+   "options": [
+    "Milliy istiqlol g’oyasi: asosiy tushuncha va tamoyillar",
+    "Birinchi Prezidentt asarlari",
+    "Markaziy Osiyo allomalarining asarlari",
+    "Diniy ta’limot"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Movarounnaxrda davlat arboblaridan kim XV asrda maktablar islohotini o’tkazdi?",
+   "options": [
+    "Ulug’bek",
+    "Bobur",
+    "Navoiy",
+    "Husayn Boyqaro"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Ta’lim mazmunini belgilovchi me’yoriy hujjatlarni belgilang.",
+   "options": [
+    "DTS, o‘quv rejasi, o‘quv dasturi",
+    "DTS, o‘quv dasturi, sinf jurnali",
+    "O‘quv rejasi, dars jadvali, DTS",
+    "Darslik, o‘quv qo‘llanma, metodik qo‘llanma"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Oila tarbiyasining asosiy yo’nalishlari – bu:",
+   "options": [
+    "Aqliy, axloqiy, estetik va mehnat tarbiyasi hisoblanadi",
+    "Ahloqiy fazilat, vatanparvarlik his-tuyg’ularini shakllantirish hisoblanadi",
+    "Bolalarni insonparvarlik umuminsoniy qadriyatlar ruhida tarbiyalashdan iborat",
+    "Aqliy zakovat, insoniy fazilat"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Oliy ta’lim qanday bosqichlardan iborat?",
+   "options": [
+    "Bakalavriat va magistratura",
+    "Magistratura",
+    "Bakalavriat",
+    "O’rta maxsus"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Pedagogik olamiga savol-javob evristik suhbat metodini olib kirgan faylasuf olim kim?",
+   "options": [
+    "Suqrot",
+    "Aflotun",
+    "Arastu",
+    "Demokrit"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Pedagogik tajriba tashkil etilish sharoitiga ko’ra qanday guruhlarga bo’linadi?",
+   "options": [
+    "Tabiiy tajriba, laboratoriya tajribasi, tajribaishi",
+    "Matematik-statistik, evrestik, innavatsion tajriba",
+    "Bolalarni ijodini o’rganish, statistika va boshqalar",
+    "Laboratoriya tajribasi, amaliy tajribasi, anketa-sinov tajribasi"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Pedagogika tarixi qanday fan ?",
+   "options": [
+    "Ijtimoiy",
+    "Siyosiy",
+    "Huquqiy",
+    "Didaktik"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Pedagogika fani Kontseptsiyasining asosiy mazmun–mohiyati nimadan iborat ?",
+   "options": [
+    "Pedagogika fanining rivojlanish istiqbollarini belgilashdan",
+    "Pedagogika fanining yangi yo’nalishlarini belgilashdan",
+    "Pedagogika fani erishgan yutuqlarni targ’ib qilishdan",
+    "Pedagogika fani erishgan yutuqlarni amaliyotda qo’llashdan"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Pedagogika fani oldida turgan vazifalardan biri –",
+   "options": [
+    "Hamkorlik pedagogikasi va milliy pedagogika asoslarini yaratish",
+    "Hamkorlik pedagogikasi asoslarini yaratish",
+    "Avtoritar pedagogika asoslarini yaratish",
+    "Milliy pedagogika asoslarini yaratish"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Pedagogika fanining ilmiy-tadqiqot usullariga nimalar kiradi?",
+   "options": [
+    "Kuzatish usuli, suhbat usuli,bolalar ijodini o’rganish usuli, test o’rovnomalar usuli, eksperiment-tajriba usuli, statistika ma’lumotlarini tahlil qilish usuli, matematika va kibernetika usullari",
+    "Hikoya usuli, suhbat usuli, ma’ruza usuli, tekshirish usul",
+    "Induktiv usuli, deduktiv usuli, evrestik usuli",
+    "Illyustrativ uslubi, demonstrativ usuli, laboratoriya usuli"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Pedagogika fanlari tizimi qaysijavobda to‘g‘ri ko’rsatilgan?",
+   "options": [
+    "Umumiy pedagogika, maktabgacha ta’lim pedagogikasi, korrektsion (maxsus) pedagogika",
+    "Umumiy pedagogika, ijtimoiy pedagogika, kasb ta’limi",
+    "Maktabgacha ta’lim pedagogikasi, metodika, pedagogika tarixi, ta’limni boshqarish va boshqalar",
+    "Pedagogik mahorat, ijtimoiy pedagogika, pedagogika tarixi"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Pedagogikaning bosh masalasi",
+   "options": [
+    "Tarbiya",
+    "Barkamol inson",
+    "Ta’lim",
+    "Ta’lim-tarbiya samaradorligini oshirish"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Birinchi Prezidentt Islom Karimov o’zining qaysi asarida milliy istiqlol g’oyasi va milliy mafkurasining asosiy mohiyatini yoritib bergan?",
+   "options": [
+    "Milliy istiqlol mafkurasi-xalq e’tiqodi va buyuk kelajakka ishonchdir",
+    "Barkamol avlod - O’zbekiston taraqqiyotining poydevori",
+    "O’zbekiston - kelajagi buyuk davlat",
+    "O’zbekistonning o’z istikdol va taraqqiyot yo’li"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Birinchi Prezidenttimiz «Ma’naviyat–insoniyat, xalqning, jamiyatning, davlatning kuch-qudratidir» deganida asosan nimalarni nazarda tutgan?",
+   "options": [
+    "Shaxs ma’naviyati yuksakligini",
+    "Ma’naviyat kuch-qudrat manbai ekanligini",
+    "Inson ham, xalq ham, jamiyat ham, davlat ham ma’naviyatga asoslanish lozimligini",
+    "Yakka shaxs yoki muayyan xalqning ma’naviyati jamiyat va davlat ma’naviyati darajasiga ko’tarila olmasligini"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Sinf-dars tizimini birinchi bo’lib kim yaratgan?",
+   "options": [
+    "Yan Amos Komenskiy",
+    "Ablulla Avloniy",
+    "Fitrat",
+    "K.D.Ushinskiy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Tarbiya jarayoni o’zida nechta xususiyatni aks ettiradi?",
+   "options": [
+    "6ta",
+    "5ta",
+    "7ta",
+    "4ta"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Tarbiya turlari qaysi variantda to’g’ri ko’rsatilgan?",
+   "options": [
+    "Aqliy, jismoniy, ahloqiy, mehnat, nafosat, ekologik, etik, iqtisodiy, huquqiy",
+    "Matematik tarbiya,ijtimoiy tarbiya, jamoatchilik tarbiyasi",
+    "Oila tarbiyasi, ahloqiy tarbiya, estetik tarbiya va boshqa",
+    "Iqtisodiy tarbiya, axloqiy tarbiya va jismoniy tarbiya"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Kim pedagogika tarixida ta’lim – tarbiyaga birinchi bo’lib ta’rif bergan?",
+   "options": [
+    "Forobiy",
+    "Al-Xorazmiy",
+    "Ibn Sino",
+    "Beruniy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "“Turkiy guliston yoxud axloq” asarining muallifi kim?",
+   "options": [
+    "AbdullaAvloniy",
+    "Abdurauf Fitrat",
+    "Hamza",
+    "Forobiy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Ta’lim nazariyasi nimani o’rganadi?",
+   "options": [
+    "Ta’lim jarayonlarini, ta’lim mazmunini, ta’lim metodlari, shakllari va vositalari o’z ichiga oladi",
+    "Ta’lim jarayonining mohiyatini o’z ichiga oladi",
+    "Ta’lim metodlari, shakllari va vositalarini o’z ichiga oladi",
+    "Ta’lim qonuniyatlari va tamoyillarini o’z ichiga oladi"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Ta’limning ko‘rgazmali metodlarini ko‘rsating.",
+   "options": [
+    "Demonstratsiya, illyustartsiya",
+    "Ma’ruza, hikoya, suhbat",
+    "Lobarotoriya, mashq, tushuntirish",
+    "Mashqlar, amaliy ishlar, didaktik o‘yinlar"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Ta’lim funktsiyalari qaysi javobda to’g’ri ko’rsatilgan?",
+   "options": [
+    "Bilim berish,tarbiyalash,rivojlantirish",
+    "Bilim, ko’nikma, malaka hosil qilish",
+    "O’quv fanlari mazmunini o’zlashtirib olish",
+    "Tevarak—atrofdagi voqealarni tushuntirish"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Ta’limning amaliy metodlariga nimalar kirishini aniqlang.",
+   "options": [
+    "Mashq kilish, laboratoriya va amaliy ishlar",
+    "Illyustratsiya, namoyish qilib ko’rsatilishi (demonstartsiya)",
+    "Hikoya, tushuntirish, suhbat, ma’ruza",
+    "Test, algoritmlash, qisman izlanish, induktsiya"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Pedagogikaning qaysi sohasi shaxsi va faoliyatida nuqsoni bor bolalarni o‘qitish va tarbiyalash bilan shug‘ullanadi?",
+   "options": [
+    "Korrektsion pedagogika",
+    "Maktab pedagogikasi",
+    "Xalq pedagogikasi",
+    "Kasbiy pedagogika"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Ta’limning qanday turlari uchun Davlat talablari (DT) joriy etiladi?",
+   "options": [
+    "Maktabgacha, maktabdan tashqari, oliy o’quv yurtidan keyingi, malaka oshirish va qayta tayyorlash",
+    "Ta’lim turlarining barchasi uchun",
+    "Maktabgacha, malaka oshirish va qayta tayyorlash",
+    "Faqat malaka oshirish va qayta tayyorlash"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Ta’limning quyidagi metodlaridan qaysi biri ko’rsatmalilik metodining asosiy tarkibini tashkil etadi?",
+   "options": [
+    "Namoyish etish, tasvirlash, ekskursiya",
+    "Mashq qilish, laboratoriya va grafik ishlar",
+    "Kuzatish, namoyish qilib ko’rsatilishi (demonstratsiya)va illyustratsiya, darslik va kitob bilan ishlash",
+    "Sxema va chizmalar tayyorlash, tablitsalar, grafiklar va diagrammalar tuzish"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Ta’limning og’zaki metodlariga nimalar kirishini ko’rsating.",
+   "options": [
+    "Hikoya, tushuntirish, suhbat, ma’ruza",
+    "Illyustratsiya, namoyish qilib ko’rsatilishi (demonstartsiya)",
+    "Mashq kilish, laboratoriya va amaliy ishlar",
+    "Test, algoritmlash, qisman izlanish, induktsiya"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "O’zbekiston Respublikasi Konstitutsiyasining qaysi modallarida oila haqida fikr bayon etiltan.",
+   "options": [
+    "63, 64, 65, 66 moddalar",
+    "63, 64 moddalar",
+    "65, 66 moddalar",
+    "61, 62, 63, 64 moddalar"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "O’zbekistonda mustaqillik e’lon qilingandan so’ng dastlabki “Ta’lim to’g’risida”gi qonun qachon qabul qilingan?",
+   "options": [
+    "1992 yil",
+    "1991 yil",
+    "1993 yil",
+    "1995 yil"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "O’zbekistonda uzluksiz ta’lim tizimining faoliyat olib borishi qay tarzda ta’minlanadi ?",
+   "options": [
+    "Kadrlar tayyorlash milliy modelini amalga oshirish jarayonida",
+    "Davlat ta’lim standartlari va davlat talablari asosida",
+    "Umumiy o’rta ta’lim standartlari asosida",
+    "Ilg’or pedagogik texnologiyalar va axborot texnologiyalari asosida"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "O’qituvchining suhbati ta’limning qaysi metodiga kiritiladi?",
+   "options": [
+    "Og’zaki",
+    "Amaliy",
+    "Ko’rgazmali",
+    "Mashq qilish"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "O’quv dasturida nimalar ko’rsatilgan?",
+   "options": [
+    "Har bir o’quv predmetining (fanining) mazmuni, o’quv yillari bo’yicha programma materiallarining (fanining) mazmuni va mavzularining tahminiy soatlari",
+    "O’quv yilining strukturasi",
+    "O’quv predmetining (faniga) ajratilgan haftalik soatlar(darslar) miqdori",
+    "O’quvchi shaxsini tarbiyalash maqsadi va vazifalari"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "O’quvchi faoliyatining asosiy turi qaysi javobda to’g’ri berilgan?",
+   "options": [
+    "O’yin, o’qish",
+    "O’qish, mehnat",
+    "Mehnat, o’yin",
+    "Muomala, mehnat"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "O’quvchilarga bilimni tartibli bayon qilish jarayoni pedagogika fanida qanday nomlanadi?",
+   "options": [
+    "Ta’lim",
+    "Faoliyat",
+    "Bilish, anglash",
+    "Ma’lumot"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "O’quvchilarni mehnatga layoqatli va mehnatsevar qilib tarbiyalashda ko’proq nimalarga e’tibor bermoq lozim?",
+   "options": [
+    "Mehnatda mashq qildirishga",
+    "Ahloqiy tarbiyaga",
+    "Ishbilarmon kishini tarbiyalashga",
+    "Iqtisodiy tarbiyaga"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Kommunikativ qobiliyatni shakllantiruvchi asosiy yo’nalishlarni belgilang?",
+   "options": [
+    "Ishontirish, ta’sir etish, taqlid qilish",
+    "Mimika va pantomimika",
+    "O’z sohasi bo’yicha chuqur bilimga ega bo’lish",
+    "Nutq madaniyatiga doir bilimlar"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "O’quvchilarning o’quv tafakkurini shakllantirish nechta darajadan iborat?",
+   "options": [
+    "5 daraja",
+    "2 daraja",
+    "3 daraja",
+    "4 daraja"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Hadis ilmida “Sahih” yo’nalishining asoschisi kim?",
+   "options": [
+    "Imom al-Buxoriy",
+    "Abu Iso at-Termiziy",
+    "Imom Ahmad an-Nasoiy",
+    "Imom Abu Dovud Sulaymon Sijistoniy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Shaxs rivojlanishiga ta’sir etuvchi omillar nechta?",
+   "options": [
+    "3ta",
+    "2ta",
+    "4ta",
+    "5ta"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Shaxs rivojlanishiga ta’sir etuvchi omillarni ko’rsating.",
+   "options": [
+    "Irsiyat, muhit tarbiya",
+    "Tarbiya, ta’lim, ma’lumot",
+    "Bilim, ko’nikma, malaka",
+    "Faoliyat, jamoat, axborot"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Shaxsning rivojlanishi deganda nima tushuniladi?",
+   "options": [
+    "Ijtimoiy tirik mavjudot sifatida insonning butun hayoti davomida bo’ladigan miqdor va sifat o’zgarishlari",
+    "Organizmning sifat jihatdan o’zgarishi",
+    "Tarbiya va rivojlanish natijasida insonningijtimoiylanuvchanligi",
+    "Organizmning miqdoriy o’zgarib borishi"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Ekologik tarbiyaning asosiy maqsadi va vazifalariga nimalar kiradi?",
+   "options": [
+    "Tevarak atrofdagi tabiiy muhitga ehtiyotkorlik bilan munosabatda bo’lishga o’rgatish, tabiatga, insonga, hayvonlarga muhabbatni tarbiyalash, tabiatni muhofaza qilish sohasidagi asosiy tushunchalarni bilish",
+    "Umuminsoniy madaniyat va milliy qadriyatlarga jalb qilish",
+    "Baxtli shaxsni tarbiyalash",
+    "Hukuqiy davlat qonunlari va huquklarni hurmat qilishni tarbiyalash, o’z mamlakatining ramzlarini hurmatlash"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Estetik tarbiyaning asosiy vazifalarini ko’rsating:",
+   "options": [
+    "Estetik ehtiyojlarni tarbiyalash, idrokni va his-tuyg’uni, estetik tushuncha, did, baholash va fikrlash, badiiy va musiqiy qobilyatlarni rivojlantirish",
+    "Axloqiy did va ongni, xulq-atvor ko’nikmalari va odatlarni rivojlantirish umuminsoniy madaniyat va milliy qadriyatlarga hurmatni tarbiyalash",
+    "Jismoniy rivojlanish sog’liqni mustahkamlash, tozalik-sog’liq tarbiyasi",
+    "Atrof-muhitga ehtiyotkorlik munosabatini, tabiatga muhabbat"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Ya.A.Komenskiyning “Buyuk didaktika” asari nechanchi yilda yozilgan?",
+   "options": [
+    "1632 yil",
+    "1630 yil",
+    "1631 yil",
+    "1700 yil"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Yangi usul maktablari uchun birinchi bo’lib “Ustodi avval” alifbosini kim yaratgan?",
+   "options": [
+    "Said Rasul Said Azizov",
+    "Behbudiy",
+    "Hamza",
+    "Shakuriy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Pedagogik vaziyatning faoliyatini mohirlik bilan boshqarish – bu:",
+   "options": [
+    "Pedagogik mahoratdir",
+    "Pedagogik vazifadir",
+    "Pedagogik texnikadir",
+    "Pedagogik vaziyatdir"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Qaysi og‘zaki bayonqilish metodi nisbatan qisqa hajmdagi o‘quv materialini o‘rganishda qo‘llaniladi?",
+   "options": [
+    "Hikoya va tushuntirish",
+    "Ma’ruza",
+    "Suhbat va hikoya",
+    "Ma’ruza va tushuntirish"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Jamoa rivojlanishining qaysi bosqichida faqat pedagoglar talab qo‘yadi?",
+   "options": [
+    "Ibosqichida",
+    "VI bosqichida",
+    "III bosqichida",
+    "II bosqichida"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Pedagogik adabiyotlar va maktab amaliyotida o‘quvchilar o‘quv faoliyatini tashkil etishning qanday asosiy shakli qabul qilingan?",
+   "options": [
+    "Ommaviy, guruhli, individual",
+    "Tabaqalashgan, individual, ommaviy",
+    "Yakka-guruhiy, ommaviy, individual",
+    "Integratsiyalashgan, yakka, guruhiy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "…davomida insonning oliy nerv faoliyatining o‘ziga xosligi, sog‘ligining holati, qiziqishlari, motivlari, kasb tanlashdagi maqsadlari o‘rganiladi.",
+   "options": [
+    "Kasbiy tashxis etish",
+    "Kasbiy bilim",
+    "Kasbiy konsultatsiya",
+    "Kasb tanlash"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Qaysi qatorda rag‘batlantirish va motivatsiyalash metodlari to‘g‘ri berilgan?",
+   "options": [
+    "Mukofotlash, tanbeh, musobaqa",
+    "Mashq, musobaqa, nasihat",
+    "Hikoya , tushuntirish, tanbeh",
+    "Namuna, o‘rgatish, ma’ruza"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "O‘qitishning individual tizimiga O‘rta Osiyolik qaysi mutafakkir qarshi chiqqan?",
+   "options": [
+    "Abu Ali ibn Sino",
+    "Abu Rayxon Beruniy",
+    "Al- Xorazmiy",
+    "Abu Nasr Forobiy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "“Millatni yo‘q qilish uchun uni qirish shart emas, uning madaniyatini, san’atini, tilini yo‘q qilsang, tez orada o‘zi tanazzulga uchraydi ” degan fikr kimga tegishli?",
+   "options": [
+    "Turkiston general-gubernatori M. Skobelovga",
+    "Turkiston general-gubernatori fon Kaufmanga",
+    "Chor Rossiyasi podshosi NikolaVIIga",
+    "Chor Rossiyasi podshosi Aleksandr Iga"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Qaysi mehnat turi o‘quvchilarning moddiy boyliklar yaratishdagi ishtiroki, bu jarayonda ularning ishlab chiqarish munosabatlariga kirishishlarini ko‘zda tutadi?",
+   "options": [
+    "Ishlab chiqarish",
+    "O‘quv",
+    "Ijtimoiy foydali",
+    "O‘z-o‘ziga xizmat"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Quyidagilarning qaysi biri mehnat tarbiyasini tashkil etishning pedagogik shart-sharoitlariga kirmaydi?",
+   "options": [
+    "Mehnat faoliyatining majburiy emasligi",
+    "Mehnat faoliyatining hammaopligi va qo‘ldan kela olishi",
+    "Bolalar mehnatining o‘quv-tarbiyaviy vazifalar bilan bog‘lig‘ligi",
+    "Ijtimoiy ahamiyatli mehnatni o‘quvchilarning qiziqishlari bilan birga qo‘shib olib borilishi"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "…bu yosh mutaxassisni kasbiy faoliyatga olib kiruvchi, ishlab chiqarish tizimiga, mehnat jamoasiga, mehnat sharoitlariga, mutaxassislikning o‘ziga xosliklariga ko‘niktiruvchi jarayon.",
+   "options": [
+    "Kasbiy moslashuv",
+    "Kasbiy bilim",
+    "Kasbiy konsultatsiya",
+    "Kasbiy diagnostika"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Kerakli sozni topib qo‘ying. ... bu aniq hatti-harakat bilan u yoki bu kishilarning ongi va his tuyg‘usiga ta’sir ko‘rsatish.",
+   "options": [
+    "O‘rgatish",
+    "Mashq",
+    "Namuna",
+    "Topshiriq"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Talablar… va … bo‘lishi mumkin.",
+   "options": [
+    "To‘g‘ridan-to‘g‘ri, bilvosita",
+    "Jamoa, me’yoriy",
+    "Rejim, maxsus",
+    "Aniq va noaniq"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Tarbiya berish vaqti ham tarbiya metodlarini tanlashga ta’sir ko‘rsatadimi?",
+   "options": [
+    "Ha,albattta",
+    "Yo‘q, ta’sir ko‘rsatmaydi",
+    "Unchalik emas",
+    "Qisman aloqadorlik mavjud"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Tarbiya vositalari – bu tarbiya usullari…",
+   "options": [
+    "Yig‘indisi",
+    "Yo‘li",
+    "Maqsadi",
+    "Mazmuni"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Faoliyatni tashkil etish va xulq-atvorni shakllantirish metodlarini toping",
+   "options": [
+    "O‘rgatish, pedagogik talab, tarbiyalovchi vaziyat",
+    "Musobaqa, ijtimoiy fikr, mashq",
+    "Hikoya, tushuntirish, ma’ruza",
+    "Ogohlantirish, etik suhbat, hikoya"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "O‘qitishning muayyan bir davrda o‘quvchilar va o‘qituvchi faoliyatini umumlashtirib xulosalash nima deb ataladi?",
+   "options": [
+    "Hisobga olish",
+    "Nazorat qilish",
+    "Tekshirish",
+    "Baholash"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Aniq jarayonlarni raqamlar tizimi yordamida modellashtirish nima deb ataladi?",
+   "options": [
+    "Shkalalash",
+    "Test",
+    "Reyting",
+    "Baholash"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Ta’lim metodlarining asosiy funktsiyalarini ko‘rsating.",
+   "options": [
+    "Motivatsiyali, rivojlantiruvchi, ta’limiy, tashkiliy",
+    "Rivojlantiruvchi, axboriy, kommunikativ",
+    "Bashorat qilish, rivojlantiruvchi, ta’limiy, tashkiliy",
+    "Tarbiyaviy, rivojlantiruvchi, kommunikativ, tashkiliy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "O‘qitish jarayoni nima?",
+   "options": [
+    "Bu ikki yoqlama boshqariladigan maqsadga muvofiq pedagogik jarayon",
+    "Bu – bilim ,ko‘nikma, malaka hosil qilish jarayoni",
+    "O‘quvchilarning mustaqil ishlarini boshqarishda o‘qituvchilarning rahbarligi",
+    "O‘qituvchining tartiblangan faoliyati"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Qaysi so‘z metod tushunchasining mohiyatini ochib beradi?",
+   "options": [
+    "Maqsadga erishish usuli",
+    "Uslubiylik",
+    "Tadqiq etish",
+    "Birgalikdagi faoliyat"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Metod va usul tushunchalari bir narsami?",
+   "options": [
+    "Yo‘q",
+    "Ha",
+    "Deyarli bir xil",
+    "Muqobil varianti"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Reja tuzish, ularni bayon etish... Bu erda gap metod haqida borayaptimi yoki usul haqidami?",
+   "options": [
+    "Usul",
+    "Shakl",
+    "Metod",
+    "Metod va usul"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Illyustrativ metoddan foydalanishning tarbiyaviy ahamiyati nimadan iborat?",
+   "options": [
+    "Ko‘rish va eshitish madaniyatini shakllantirish",
+    "O‘rganilayotgan materialni dastlabki idrok etish",
+    "Analizatorlar faoliyatini faollashtirish",
+    "Estetik didni shakllantirish"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Quyidagi qaysi metodlar yordamida ko‘nikma va malakalar hosil qilinadi 1)suhbat; 2)mashq; 3)laboratoriya; 4)munozara 5)demonstratsiya",
+   "options": [
+    "2,3,5",
+    "1,3,5",
+    "2,4,5",
+    "2,3"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Quyidagi metodlardan qaysi biri bilimlarni berish, nazorat qilish, mustahkamlash, umumlashtirish, tizimlashtirishga xizmat qiladi?",
+   "options": [
+    "Videometod",
+    "Demonstratsiya",
+    "Illyustratsiya",
+    "Mashqlar"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "… - bu ta’lim-tarbiya natijasida olingan va tizimlashtirilgan bilim, hosil qilingan ko‘nikma va malakalar hamda shakllangan dunyoqarashlar majmuidir.",
+   "options": [
+    "Ma’lumot",
+    "O‘qish",
+    "Rivojlanish",
+    "Tarbiya"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Ilmiy pedagogika nechanchi asrda paydo bo‘ldi",
+   "options": [
+    "XVII asrda",
+    "XVI asrda",
+    "XVIII asrda",
+    "XIX asrda"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "… – kadrlar tayyorlash tizimining bosh subekti va obekti, ta’lim sohasidagi davlat xizmatlarining iste’molchisi va ularni amalgam oshiruvchisi.",
+   "options": [
+    "Shaxs",
+    "Davlat",
+    "Jamiyat",
+    "Fan"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "… – yuqori malakali mutaxassislar tayyorlovchi va ulardan foydalanuvchi, ilg‘or pedagigik va axborot texnologiyalarini ishlab chiquvchi.",
+   "options": [
+    "Fan",
+    "Ishlab chiqarish",
+    "Uzluksiz ta’lim"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "…– malakali raqobatbardosh kadrlar tayyorlashning asosi bo‘lib, ta’limning barcha turlarini, davlat ta’lim standartlarini, kadrlar tayyorlash tuzilmasi va uning faoliyat ko‘rsatish mohiyatini o‘z ichiga oladi.",
+   "options": [
+    "Uzluksiz ta’lim",
+    "Fan",
+    "Davlat va jamiyat",
+    "Ishlab chiqarish"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Didaktik jarayon kechadigan barcha sharoitlarni oydinlashtirish, uning natijalarini belgilash deganda nima tushuniladi?",
+   "options": [
+    "Tashxis",
+    "Nazorat qilish",
+    "Hisobga olish",
+    "Baholash"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "“Osondan qiyinga qarab borish”, “Ma’lumdan noma’lumga qarab borish”, “Soddadan murakkabga qarab borish” kabi tushunchalar qaysi ta’lim tamoyillariga tegishli?",
+   "options": [
+    "O‘quvchilarga mos bo‘lish",
+    "Ko‘rgazmalilik",
+    "Tushunarlilik",
+    "Ilmiylik"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Qaysi ta’lim tamoyilini Ya.A.Komenskiy didaktikaning oltin qoidasi deb atagan?",
+   "options": [
+    "Ko‘rsatmalilik",
+    "Tabiat bilan uyg‘unligi",
+    "Ilmiylik",
+    "Tushunarlilik"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "O‘qituvchining darsga tayyorlanishida qanday bosqichlar ko‘zga tashlanadi?",
+   "options": [
+    "Tashxislash, bashoratlash, loyihalashtirish",
+    "Tashxislash,loyihalash, tizimlashtirish",
+    "Tashxislash, mustahkamlash, tushunish",
+    "Loyihalash, tushunish, bashoratlash"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Qaysi olim tabiatda hayot bahordan boshlangani kabi ta’lim olish jarayoni uchun eng qulay davr bolalik ekanligini ta’kidlagan?",
+   "options": [
+    "Ya.A.Komenskiy",
+    "Abdulla Avloniy",
+    "Disterverg",
+    "Gerbart"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Qaysi ta’lim tizimi garchi 350 yil avval asoslangan bo‘lsada, bugungi kunda ham keng ko‘lamda qo‘llanilmoqda",
+   "options": [
+    "Sinf-dars",
+    "Ma’ruza-seminar",
+    "Individual",
+    "Jamoaviy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Kerakli so‘zni topib qo‘ying. Tarbiya metodlari – bu tarbiya …amalga oshirish…",
+   "options": [
+    "Maqsadi, yo‘li",
+    "Yig‘indisi, usuli",
+    "Aniq, qism",
+    "Usuli, qismi"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Mashq, o‘rgatish, tarbiyaviy vaziyat tarbiyaning qaysi metodlariga kiradi?",
+   "options": [
+    "Faoliyatni tashkil etish",
+    "Ongni shakllantirish",
+    "Rag‘batlantirish",
+    "Nazorat"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Vatanparvarlik tarbiyasida… o‘rganish bo‘yicha ishlarni tashkil etish muhim rol o‘ynaydi",
+   "options": [
+    "Davlat ramzlarini",
+    "Davlat hujjatlarini",
+    "Badiiy adabiyotlarni",
+    "Qonun va qarorlarni"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Tarbiyachi o‘zi xohlagan sifatlarni tarbiyalanuvchilar ongiga singdirish uchun ularning ruhiyatiga ma’lum maqsadga ko‘ra tizimli ta’sir ko‘rsatishiga nima deb aytiladi?",
+   "options": [
+    "Tarbiya",
+    "Ta’lim",
+    "Rivojlanish",
+    "Ma’lumot"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Estetika so‘zining ma’nosi nima?",
+   "options": [
+    "Go‘zallikni his qilaman",
+    "Xulq-atvor",
+    "Donolikni sevaman",
+    "O‘qitaman"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Estetika tushunchasini fanga kim kiritgan?",
+   "options": [
+    "Baumgarten",
+    "K.D.Ushinskiy",
+    "V. Suxomlinskiy",
+    "Forobiy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Shaxsning estetik faoliyatiga, voqelik va san’at asarlarini estetik jihatdan o‘zlashtirishga kirishishi nima deb ataladi?",
+   "options": [
+    "Estetik qiziqish",
+    "Estetik did",
+    "Estetik ong",
+    "Estetik baho"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Bo‘sh vaqtni foydali va maroqli mashg‘ulotlar bilan to‘ldirish jismoniy tarbiyaning qaysi vazifasiga kiradi?",
+   "options": [
+    "Umummadaniy",
+    "Rivojlantiruvchi",
+    "Sog‘lomlashtiruvchi",
+    "Tarbiyaviy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Jismoniy mashqlarga nimalar kiradi?",
+   "options": [
+    "Gimnastika, o‘yin, turizm, sport",
+    "Uyqu, dam olish, ovqatlanish",
+    "Quyosh, havo, suv",
+    "Yugurish, sakrash, suzish, konkida uchish"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "B.T.Lixachev jismoniy madaniyatning vazifalarini qay tariqa tasnif etadi?",
+   "options": [
+    "Rivojlantiruvchi, tarbiyaviy, ta’limiy, sog‘lomlashtiruvchi, umummadaniy",
+    "Motivatsiyali, rivojlantiruvchi, tibbiy, tizimli",
+    "Tashkiliy, nazorat, tarbiyaviy, sog‘lomlashtiruvchi, ta’limiy",
+    "Ta’limiy, tarbiyaviy, bashorat qilish, sog‘lomlashtiruvchi"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Kichik maktab yoshidagi o‘quvchilarda qanday o‘yin turlari asosiy hisoblanadi?",
+   "options": [
+    "Ochiq havodagi",
+    "Sport",
+    "Milliy",
+    "Tabiiy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Quyidagi qaysi so‘z “axloq” so‘zi bilan sinonim bo‘la oladi?",
+   "options": [
+    "Etika",
+    "Odat",
+    "Estetika",
+    "E’tiqod"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Axloqiy mezonga muvofiq, maktabgacha yoshdagi bolaning nimani bilishi talab etiladi",
+   "options": [
+    "Ular O‘zbekistonda yashayotganligini bilishi",
+    "Vatanni ulug‘lovchi madhiyani bilishi",
+    "Rasm chiza olishi, she’rlar, qo‘shiqlar yozishi",
+    "O‘z Vatanining fuqarosi ekanligini bilishi"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Axloqiy tarbiya jarayonini mazmunining o‘ziga xosligi nimadan iborat?",
+   "options": [
+    "Odamlarning ijtimoiy hayotlarining hamma tomonlarini qamrab olishida",
+    "Jismoniy kuchni talab qilishida",
+    "Ijtimoiy ahamiyatli faoliyat ekanligida",
+    "O‘z-o‘ziga ishonchni tarkib toptirishda"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Hayotda qoida sifatida qabul qilingan talablardan kishilar o‘zlariga odamlar orasidan namuna tanlaydi. Bu qanday tushuncha bilan ataladi?",
+   "options": [
+    "Axloqiy ideal",
+    "Axloqiy norma",
+    "Axloqiylik",
+    "Axloq kategoriyalar"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Darsda o‘qituvchining e’tibori bir necha o‘quvchiga qaratilsa, bu vaqtda qolgan o‘quvchilar mustaqil ishlasalar, ta’limning bunday shakli qanday ataladi?",
+   "options": [
+    "Individual-guruhli",
+    "Individual",
+    "Ommaviy",
+    "Guruhiy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "O‘quv diskussiyasining bosh maqsadi nima?",
+   "options": [
+    "Bilishga bo‘lgan qiziqishni rag‘batlantirish",
+    "Tarbiyalash, rivojlantirish, ta’lim berish",
+    "Nazorat, o‘z-o‘zini nazorat qilish",
+    "Ko‘nikma va malakalar hosil qilish"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Bilish faoliyati bo‘yicha tasnif qilinuvchi ta’lim metodlaridan qaysi biri kam vaqt sarflab, katta hajmdagi bilimni berishni ta’minlay oladi?",
+   "options": [
+    "Reproduktiv",
+    "Qisman izlanish",
+    "Tadqiqot",
+    "Muammoli"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Turkistonda XIX asrning II-yarmida mavjud bo’lgan madrasalarda ta’lim necha bosqichda bo’lgan?",
+   "options": [
+    "3 bosqich",
+    "4 bosqich",
+    "2 bosqich",
+    "5 bosqich"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Zardusht eramizdan avvalgi nechanchi asrda yashagan?",
+   "options": [
+    "VI asr",
+    "VII asr",
+    "V asr",
+    "IV asr"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Zardushtiylik ta’limotida necha yosh balog’at yoshi hisoblangan?",
+   "options": [
+    "15yosh",
+    "13 yosh",
+    "14 yosh",
+    "12 yosh"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Eng qadimgi turkiy tilida yaratilgan “Urxun Enasoy bitiklari”ni birinchi bo’lib o’qigan shaxs kim edi?",
+   "options": [
+    "Vilgelm Tomson",
+    "M.Yand-rintsev",
+    "V.Radlov",
+    "N.Rah-monov"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Toshkentda dastlabki rus maktabi qachon ochilgan?",
+   "options": [
+    "1886-yilda",
+    "1913-yilda",
+    "1883-yilda",
+    "1903-yilda"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Maktab sizni inson qilur, maktab hayot ehson qilur, maktab g’ami vayron qilur, hayrat qilib o’qing o’g’lon. Ushbu she’rning muallifi kim?",
+   "options": [
+    "Avloniy",
+    "Ibrat",
+    "Shakuriy",
+    "Behbudiy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "“Haftiyak” nechanchi asrda tuzilgan?",
+   "options": [
+    "VIII asrda",
+    "VIIasrda",
+    "V asrda",
+    "VI asrda"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "O’rta Osiyoda birinchi madrasa nechanchi asrda qurilgan?",
+   "options": [
+    "X arsda",
+    "XI arsda",
+    "XIIIasrda",
+    "XIIasrda"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Madrasa so’zi qanday ma’noni anglatadi?",
+   "options": [
+    "Dars o’qitiladigan joy",
+    "Muassasa",
+    "Bino",
+    "Xonalar to’plami"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "XIII asrdan boshlab kimning turkiy tilda yozilgan she’r va boshqa asarlari vositasida islom dini rukunlari turkiy tilde o’rganila boshlangan?",
+   "options": [
+    "Ahmad Yassaviy",
+    "Beruniy",
+    "Farobiy",
+    "Imom Al-Buxoriy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Arab halifaligi bosib olgan Movarounnahrda maktablarda faqat o’g’il bolalar o’qir edi, qizlar esa …",
+   "options": [
+    "Otinoyilar uyida oq’itar edilar",
+    "Umuman o’qitilmagan",
+    "Onalariga qarashib uy ishlarini o’rgangan",
+    "Oila qurishga tayyorlanishgan"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "“Qur’on” so’zining ma’nosi nima?",
+   "options": [
+    "O’qish",
+    "O’qitish",
+    "Uqtirish",
+    "Eslatish"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Islom dini ta’limotida “Qur’oni Karimdan” keying asosiy manbaa nima hisoblanadi?",
+   "options": [
+    "Hadis",
+    "Kalom ilmi",
+    "Fiqh",
+    "Tariqat"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "“Hadis” so’zi bilan bir ma’noni anglatadigan so’zlar qatorini toping.",
+   "options": [
+    "“Sunna”",
+    "“Ilm”",
+    "“Kalom”",
+    "“Muqaddas so’z”"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "“Ash-Shamoil an-Nabaviya” asarining muallifi kim?",
+   "options": [
+    "Termiziy",
+    "Buxoriy",
+    "Farobiy",
+    "Beruniy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "“Al-jome’as-sahih” asarining muallifi kim?",
+   "options": [
+    "Imom al-Buxoriy",
+    "Termiziy",
+    "Beruniy",
+    "Farobiy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "“Al-jome’ as-sahih” asarining ma’nosi berilgan qatorni toping.",
+   "options": [
+    "“Ishonarli to’plam”",
+    "“Faqat haslar”",
+    "“Ilmlar to’plami”",
+    "“Ilm olish haqida”"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Nechanchi asrlar hadis ilmining rivojlanishida “oltin davr” hisoblangan?",
+   "options": [
+    "VIII-IX asr",
+    "VI-VIIasr",
+    "VII-VIIIasr",
+    "IX-Xasr"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Hadislarni to’plovchi shaxslarni … deb atalgan?",
+   "options": [
+    "Muhaddis",
+    "Mudirlar",
+    "Hadis to’plovchi",
+    "Hadischi"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Movarounnahrda birinchi bo’lib hadis to’plagan muhaddis kim?",
+   "options": [
+    "Imom al-Buxoriy",
+    "Xolid ibn Ahmad inb Xolid az-Zahiliy",
+    "Abu Abdulloh Muham-mad ibn Ismoil al-Buxoriy",
+    "Imom Abdulloh ibn Muborak al-Navroziy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Muhammad ibn Iso at-Termiziy nechanchi yilda tug’ilgan?",
+   "options": [
+    "824-yilda",
+    "820-yilda",
+    "830-yilda",
+    "834-yilda"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Shialik arabcha so’z bo’lib … degan ma’noni anglatadi.",
+   "options": [
+    "Guruh, taraf",
+    "Targ’ibot",
+    "Rivojla-nish, targ’ibot",
+    "Asoschi"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Kreptiya so’zining ma’nosi?",
+   "options": [
+    "Qullarni tutish",
+    "Harbiy jang san’ati",
+    "Aql gimnastikasi",
+    "Turmush ishlar"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "O’gil bolalarni maktabga yetaklab boruvchi kishilar qanday atalgan?",
+   "options": [
+    "Pedagog",
+    "Kreptiylar",
+    "Pedanomlar",
+    "Tarbiyachi"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Obyektiv idealism asoschisi…",
+   "options": [
+    "Platon",
+    "Fales",
+    "Suqrot"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Platon tarbiya maqsadini qanday izohlaydi?",
+   "options": [
+    "Tarbiya –faqatgina jangchilar va faylasuflar uchundir",
+    "Tarbiya-butun insoniyat uchun",
+    "Tarbiya-axloqsizlar uchun",
+    "Tarbiya-qullar uchun"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Qaysi faylasuf birinchilardan bo’lib maktabgacha tarbiya tashkil etilishi o’ta muhimligini ta’kidlagan?",
+   "options": [
+    "Platon",
+    "Arastu",
+    "Suqrot",
+    "Demokrit"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Qaysi faylasuf qo’llarning talim tarbiya olishiga qaysi faylasuf qarshi chiqgan",
+   "options": [
+    "Platon",
+    "Suqrot",
+    "Arastu",
+    "Demosfen"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "G’arbiy Yevropada ritorikani o’rganishdan maqsad nima bo’lgan?",
+   "options": [
+    "Va’zxonlik qilish",
+    "Diniy kitoblarni o’qish",
+    "Dialiktika San’atini o’rganish",
+    "Diniy musiqalarni chalishni o’rganish"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Oliy ta’limdan so’ng ta’limning qaysi turiga o’tiladi?",
+   "options": [
+    "Kadrlar malakasini oshirish va ularni qayta tayyorlash",
+    "Maktabdan tashqari ta’lim",
+    "Majburiy ta’lim",
+    "Umumiy o’rta ta’lim"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Bolalar va o’smirlar bo’sh vaqtini va dam olishini tashkil etish uchun madaniy-estetik, texnikaviy sport va boshqa yo’nalishlardagi ta’limni ……. o’z ichiga oladi.",
+   "options": [
+    "Maktabdan tashqari ta’lim",
+    "Oliy ta’lim",
+    "O’rta maktab",
+    "Kadrlarni qayta tayyorlash"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Ahmad Yugnakiyning “Hibbat ul-haqoyiq” asari kimga atab yozilgan?",
+   "options": [
+    "To’g’rul Qilich Sipoh- solarbekning nomiga atab yozilgan",
+    "Ibn Xavqal nomiga atab yozilgan",
+    "Arat Raxmatiy Ibnul Yakub nomiga atab yozilgan",
+    "Ibn Xanafa nomiga atab yozilgan"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "So’fiylar insonni ma’naviy-ruhiy komillikka erishish yo’lida nechta bosqichdan o’tishi kerakligini aytgan va ular qaysilar?",
+   "options": [
+    "4 bosqich: Shariat; tariqat; ma’rifat; haqiqat",
+    "3 bosqich; Shariat; tariqat; ma’rifat",
+    "5 bosqich: Shariat; tariqat; ma’naviyat; ma’rifat; haqiqat",
+    "2 bosqich:Shariat;ma’rifat"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Abu Ali ibn Sino kitob do’konida kim tomonidan Aristotelning “Metofzika” asariga yozilgan sharxni sotib olgan?",
+   "options": [
+    "Farobiy",
+    "Buxoriy",
+    "Al-Xorazmiy",
+    "Suqrot"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Al-Xorazmiyning matematikaga oid ikkinchi kitobi qaysi?",
+   "options": [
+    "“Hisob al-hind”",
+    "“Al-Jabr”",
+    "“Al-kitob al-muxtasar”",
+    "“ Al-Jabr al-muqobala”"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Abu Nasr Farobiy necha tilni bilganligi aniqlangan?",
+   "options": [
+    "70",
+    "60",
+    "75",
+    "90"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Abu Nasr Farobiy asarlari keltirilgan javobni toping",
+   "options": [
+    "“Fozil odamlar shahri”, “Ilmlarning kelib chiqishi\", “Aql ma’nolari to’g’risida”",
+    "“Hibbat ul-haqoyiq”, “Fozil odamlar shahri”",
+    "“Guliston”, “Aql ma’nolari to’g’risida”, “Fozil odamlar shahri”",
+    "“Hibbat ul-haqoyiq”, “Guliston”"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Farobiy ta’lim-tarbiyaning asosiy vazifasi nimada deb ta’kidlagan?",
+   "options": [
+    "Jamiyat talabiga javob bera oladigan yetuk insonni tarbiyalash",
+    "Vatanparvar insonni tarbiyalash",
+    "Kelajak avlodga tarbiyachi tayyorlash",
+    "Iymonli komil insonni tarbiyalash"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Beruniy qayerda tavallud topgan?",
+   "options": [
+    "Xorazmning Qiyot shahrida",
+    "Samarqandning Chelak qishlog’ida",
+    "Buxoroning Qorako’l hududida",
+    "Hirotda"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "“Geodeziya” va “Mineralogiya” asarlari kimga tegishli?",
+   "options": [
+    "Abu Rayhon Beruniy",
+    "Al-Xorazmiy",
+    "Imom al-Buxoriy",
+    "Koshg’ariy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Xorazmiyning mashxur astronomik jadvali qaysi?",
+   "options": [
+    "Xorazmiy ziji",
+    "Al-Ziji",
+    "Kitob al-ziji",
+    "Ziji Koragoniy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Kim ilmsiz kishini qimmatsiz ilikka, ilmli kishini qimmatbaho dinorga o`xshatgan?",
+   "options": [
+    "Ahmad Yugnakiy",
+    "Kaykovus",
+    "Muslihiddin Sa`diy",
+    "Abu Rahyon Beruniy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Umumiy o`rta talim qanday bosqichlarga bo`linadi?",
+   "options": [
+    "Boshlang`ich va umumiy o`rta ta`lim",
+    "Maktabgacha , Boshlang`ich, O`rta ta`lim",
+    "Maktabgacha, Majburiy ta`lim",
+    "Boshlang`ich, O`rta, Maktabdan tashqari ta`lim"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Qaysi olim birinchi bo`lib tarbiyani tabiatga tenglashtirirish kerakligini aytadi?",
+   "options": [
+    "Demokrit",
+    "Platon",
+    "Suqrot",
+    "Demosfen"
+   ],
+   "answer": 0,
+   "explanation": ""
+  },
+  {
+   "question": "Hadis ilmida “Amir ul-mo`min”, “Imom al-muhadisiyn” degan sharafli nomga sazovor bo`lgan muhaddis kim edi?",
+   "options": [
+    "Buxoriy",
+    "Beruniy",
+    "Farobiy",
+    "Termiziy"
+   ],
+   "answer": 0,
+   "explanation": ""
+  }
+ ]
+}
