@@ -80,13 +80,19 @@ async def open_lobby(message: types.Message, mode: str) -> None:
         "players": {},
         "msg_id": None,
     }
-    text, markup = await _lobby_card(chat_id)
+    card = await _lobby_card(chat_id)
+    if card is None:
+        return
+    text, markup = card
     sent = await message.answer(text, reply_markup=markup)
-    LOBBIES[chat_id]["msg_id"] = sent.message_id
+    if chat_id in LOBBIES:
+        LOBBIES[chat_id]["msg_id"] = sent.message_id
 
 
-async def _lobby_card(chat_id: int) -> tuple[str, types.InlineKeyboardMarkup]:
-    lobby = LOBBIES[chat_id]
+async def _lobby_card(chat_id: int) -> tuple[str, types.InlineKeyboardMarkup] | None:
+    lobby = LOBBIES.get(chat_id)
+    if lobby is None:          # o'yin boshlanib ketgan yoki bekor qilingan
+        return None
     col = await db.collection(lobby["col_id"])
     total = await db.count_questions(lobby["col_id"])
     count = min(lobby["count"], total) if lobby["count"] > 0 else total
@@ -113,10 +119,16 @@ async def _lobby_card(chat_id: int) -> tuple[str, types.InlineKeyboardMarkup]:
     return text, ui.kb(rows)
 
 
-async def _refresh_lobby(call: types.CallbackQuery) -> None:
-    text, markup = await _lobby_card(call.message.chat.id)
+async def _refresh_lobby(call: types.CallbackQuery) -> bool:
+    card = await _lobby_card(call.message.chat.id)
+    if card is None:
+        with contextlib.suppress(TelegramBadRequest):
+            await call.message.edit_reply_markup(reply_markup=None)
+        return False
+    text, markup = card
     with contextlib.suppress(TelegramBadRequest):
         await call.message.edit_text(text, reply_markup=markup)
+    return True
 
 
 @router.my_chat_member(GROUP)
@@ -189,7 +201,10 @@ async def cb_join(call: types.CallbackQuery) -> None:
         lobby["players"][uid] = call.from_user.first_name or call.from_user.full_name
         await db.touch_user(uid, call.from_user.full_name, call.from_user.username)
         await call.answer("✅ Siz qatnashchilar ro'yxatidasiz!")
-    await _refresh_lobby(call)
+    if not await _refresh_lobby(call):
+        with contextlib.suppress(TelegramBadRequest):
+            await call.answer("O'yin allaqachon boshlandi — savollarga javob bering!",
+                              show_alert=True)
 
 
 @router.callback_query(F.data == "g:mode")

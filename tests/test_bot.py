@@ -172,6 +172,12 @@ async def main():
     await dp.feed_update(bot, H.upd_message("/reyting", ali, grp))
     check("/reyting ishladi", "reytingi" in last_texts(S)[-1])
 
+    # poyga holati: o'yin boshlangach «Qatnashaman» bosilsa yiqilmasin
+    await dp.feed_update(bot, H.upd_call("g:join", sardor, grp, lob_mid))
+    await dp.feed_update(bot, H.upd_call("g:cnt", ali, grp, lob_mid))
+    await dp.feed_update(bot, H.upd_call("g:back", vali, grp, lob_mid))
+    check("yopilgan lobbida yiqilmaydi", True)
+
     print("\n━━━ 6. GURUH: KLASSIK ━━━")
     await dp.feed_update(bot, H.upd_message("/quiz", ali, grp))
     gmid = S.calls[-1][2].message_id
