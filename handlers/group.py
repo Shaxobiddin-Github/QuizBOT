@@ -185,7 +185,7 @@ async def _refresh_lobby(call: types.CallbackQuery, immediate: bool = False) -> 
 async def on_bot_added(event: types.ChatMemberUpdated) -> None:
     """Bot guruhga qo'shilganda guruhni ro'yxatga olamiz."""
     chat = event.chat
-    await db.touch_chat(chat.id, chat.title or "", chat.type)
+    await db.touch_chat(chat.id, chat.title or "", chat.type, chat.username)
     if event.from_user and not event.from_user.is_bot:
         await db.touch_chat_member(chat.id, event.from_user.id)
     new = event.new_chat_member

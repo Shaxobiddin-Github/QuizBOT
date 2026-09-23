@@ -379,6 +379,10 @@ async def main():
     await dp.feed_update(bot, H.upd_call("act:grp", ali, priv, fmid))
     check("guruhlar bo'limi", "Guruhlar" in S.messages[fmid] and "a'zo" in S.messages[fmid],
           S.messages[fmid][:100])
+    gkb = [m for k, m, _ in S.calls
+           if k == "EditMessageText" and getattr(m, "reply_markup", None)][-1].reply_markup
+    urls = [b.url for row in gkb.inline_keyboard for b in row if b.url]
+    check("guruhga o'tish tugmasi", bool(urls) and "t.me" in urls[0], str(urls))
     await dp.feed_update(bot, H.upd_call("act:col", ali, priv, fmid))
     check("bazalar bo'limi", "Bazalar" in S.messages[fmid] and "savol" in S.messages[fmid])
     await dp.feed_update(bot, H.upd_call("act:top", ali, priv, fmid))

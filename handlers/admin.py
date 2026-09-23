@@ -91,6 +91,37 @@ async def _overview() -> str:
         f"Guruhlar: <b>{st['chats']}</b>")
 
 
+async def group_link(bot: Bot, row) -> tuple[str, bool]:
+    """Guruhga o'tish havolasi → (havola, hammaga ochiqmi).
+
+    1) @username bo'lsa — ochiq havola
+    2) bot admin bo'lsa — taklif havolasi (keshlanadi)
+    3) aks holda — t.me/c/… (faqat guruh a'zolari uchun ochiladi)
+    """
+    keys = row.keys()
+    username = (row["username"] if "username" in keys else "") or ""
+    if username:
+        return f"https://t.me/{username}", True
+
+    cached = (row["invite_link"] if "invite_link" in keys else "") or ""
+    if cached:
+        return cached, True
+
+    with contextlib.suppress(Exception):
+        chat = await bot.get_chat(row["chat_id"])
+        if chat.username:
+            await db.touch_chat(chat.id, chat.title or "", chat.type, chat.username)
+            return f"https://t.me/{chat.username}", True
+        if chat.invite_link:
+            await db.set_chat_link(chat.id, chat.invite_link)
+            return chat.invite_link, True
+
+    raw = str(row["chat_id"])
+    if raw.startswith("-100"):
+        return f"https://t.me/c/{raw[4:]}/1", False
+    return "", False
+
+
 async def _groups_text() -> str:
     rows = await db.group_activity()
     if not rows:
@@ -102,6 +133,8 @@ async def _groups_text() -> str:
             f"   👤 {r['members']} a'zo · 🧩 {r['games']} o'yin · "
             f"✍️ {r['answers']} javob\n"
             f"   📚 ochilgan baza: {r['shared']} · oxirgi o'yin: {_ago(r['last_game'])}")
+    lines.append("\n<i>Quyidagi tugmalar guruhni ochadi. Yopiq guruhlarda havola "
+                 "faqat a'zolar uchun ishlaydi.</i>")
     return "\n".join(lines)
 
 
@@ -163,9 +196,24 @@ async def cb_activity(call: types.CallbackQuery) -> None:
         await call.answer()
         return
     text = await builder()
+    markup = _act_kb(key)
+    if key == "grp":
+        markup = await _groups_kb(call.bot)
     with contextlib.suppress(TelegramBadRequest):
-        await call.message.edit_text(text[:4000], reply_markup=_act_kb(key))
+        await call.message.edit_text(text[:4000], reply_markup=markup)
     await call.answer()
+
+
+async def _groups_kb(bot: Bot) -> types.InlineKeyboardMarkup:
+    """Guruhlar bo'limi: har bir guruhga o'tish tugmasi + bo'lim tablari."""
+    rows: list[list[types.InlineKeyboardButton]] = []
+    for r in (await db.group_activity())[:8]:
+        link, _public = await group_link(bot, r)
+        if link:
+            rows.append([types.InlineKeyboardButton(
+                text=f"➡️ {ui.shorten(r['title'] or str(r['chat_id']), 30)}", url=link)])
+    base = _act_kb("grp")
+    return types.InlineKeyboardMarkup(inline_keyboard=rows + base.inline_keyboard)
 
 
 # ---------------------------------------------------------------- /tozalash

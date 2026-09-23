@@ -196,6 +196,11 @@ async def _migrate(conn: aiosqlite.Connection) -> None:
                      ("option_images", "TEXT DEFAULT ''")):
         if col not in qcols:
             await conn.execute(f"ALTER TABLE questions ADD COLUMN {col} {ddl}")
+    async with conn.execute("PRAGMA table_info(chats)") as cur:
+        chcols = {r["name"] for r in await cur.fetchall()}
+    for col in ("username", "invite_link"):
+        if col not in chcols:
+            await conn.execute(f"ALTER TABLE chats ADD COLUMN {col} TEXT DEFAULT ''")
     async with conn.execute("PRAGMA table_info(users)") as cur:
         ucols = {r["name"] for r in await cur.fetchall()}
     if "blocked" not in ucols:
@@ -508,13 +513,21 @@ async def shared_collections_for_chat(chat_id: int) -> list[int]:
     return [r["collection_id"] for r in rows]
 
 
-async def touch_chat(chat_id: int, title: str, kind: str) -> None:
+async def touch_chat(chat_id: int, title: str, kind: str,
+                     username: str | None = None) -> None:
     await execute(
-        """INSERT INTO chats(chat_id, title, type, added_at, last_seen)
-           VALUES(?,?,?,?,?)
+        """INSERT INTO chats(chat_id, title, type, username, added_at, last_seen)
+           VALUES(?,?,?,?,?,?)
            ON CONFLICT(chat_id) DO UPDATE SET
-             title=excluded.title, type=excluded.type, last_seen=excluded.last_seen""",
-        (chat_id, title or "", kind, now(), now()))
+             title=excluded.title, type=excluded.type,
+             username=COALESCE(NULLIF(excluded.username, ''), chats.username),
+             last_seen=excluded.last_seen""",
+        (chat_id, title or "", kind, username or "", now(), now()))
+
+
+async def set_chat_link(chat_id: int, invite_link: str) -> None:
+    await execute("UPDATE chats SET invite_link=? WHERE chat_id=?",
+                  (invite_link or "", chat_id))
 
 
 async def touch_group(chat_id: int, title: str, kind: str, user_id: int | None) -> None:

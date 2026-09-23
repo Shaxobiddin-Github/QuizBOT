@@ -75,6 +75,9 @@ Guruhda o'yin faqat **o'sha guruhga ochilgan** bazalardan boshlanadi.
 bloklaganlar), testlar (sessiyalar, rejimlar kesimi, javoblar, umumiy aniqlik),
 guruhlar (a'zolar, o'yinlar, ochilgan bazalar, oxirgi faollik), bazalar va
 eng faol foydalanuvchilar. To'rt bo'lim tugmalar bilan almashtiriladi.
+👥 Guruhlar bo'limida har bir guruhga **o'tish tugmasi** bor: ochiq guruhlarda
+`@username` yoki taklif havolasi, yopiq guruhlarda `t.me/c/…` (u faqat guruh
+a'zolari uchun ochiladi).
 
 `/tozalash` — admin uchun avtomatik tozalash: bot guruhlarga yuborgan xabarlar
 (test savollari, natijalar, e'lonlar) belgilangan muddatdan keyin o'chiriladi.
