@@ -21,7 +21,8 @@ from urllib.parse import urlparse
 
 import aiohttp
 from aiogram import Bot, types
-from aiogram.exceptions import TelegramBadRequest
+from aiogram.exceptions import (TelegramAPIError, TelegramBadRequest,
+                                TelegramRetryAfter)
 from PIL import Image, ImageDraw
 
 import config
@@ -271,8 +272,12 @@ async def show(bot: Bot, chat_id: int, current, text: str, markup=None,
 
 async def edit_card(bot: Bot, chat_id: int, message_id: int, is_photo: bool, text: str,
                     markup=None) -> None:
-    """Rasm almashmaydigan kartani (masalan, guruh jangi) yangilash."""
-    with contextlib.suppress(TelegramBadRequest):
+    """Rasm almashmaydigan kartani (masalan, guruh jangi) yangilash.
+
+    Guruhda o'nlab odam bir vaqtda tugma bosishi mumkin — Telegram flood
+    controlga urganda kutib bir marta qayta urinamiz, aks holda jim o'tamiz.
+    """
+    async def _apply() -> None:
         if is_photo:
             caption, mode = _fit(text)
             await bot.edit_message_caption(chat_id=chat_id, message_id=message_id,
@@ -281,3 +286,12 @@ async def edit_card(bot: Bot, chat_id: int, message_id: int, is_photo: bool, tex
         else:
             await bot.edit_message_text(text, chat_id=chat_id, message_id=message_id,
                                         reply_markup=markup)
+
+    try:
+        await _apply()
+    except TelegramRetryAfter as exc:
+        await asyncio.sleep(exc.retry_after + 1)
+        with contextlib.suppress(TelegramAPIError):
+            await _apply()
+    except TelegramAPIError:
+        pass

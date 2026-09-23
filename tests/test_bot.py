@@ -130,6 +130,8 @@ async def main():
     lob_mid = S.calls[-1][2].message_id
     for u in (ali, vali, sardor):
         await dp.feed_update(bot, H.upd_call("g:join", u, grp, lob_mid))
+    # lobbi yangilanishi flood controldan qochish uchun yig'ib yuboriladi
+    await asyncio.sleep(3.2)
     check("3 qatnashchi qo'shildi", "Qatnashchilar (3)" in S.messages[lob_mid],
           S.messages[lob_mid][:200])
     await dp.feed_update(bot, H.upd_call("g:cnt", vali, grp, lob_mid))

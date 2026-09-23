@@ -6,9 +6,11 @@ import contextlib
 import time
 
 from aiogram import Bot, F, Router, types
-from aiogram.exceptions import TelegramBadRequest
+from aiogram.exceptions import (TelegramAPIError, TelegramBadRequest,
+                                TelegramRetryAfter)
 from aiogram.filters import Command
 
+import bg
 import config
 import db
 import media
@@ -26,6 +28,28 @@ GAMES: dict[int, dict] = {}
 BATTLE: dict[tuple[int, int], dict] = {}
 
 MODE_NAME = {"classic": "🎯 Klassik (quiz-poll)", "battle": "🧠 Pro jang"}
+
+# Telegram bitta chatda tez-tez tahrirlashga yo'l qo'ymaydi (flood control).
+# Ko'p kishi birdan tugma bossa, tahrirlarni bitta yangilanishga yig'amiz.
+EDIT_GAP = 2.5
+_pending_refresh: dict[int, asyncio.Task] = {}
+
+
+async def _safe_edit(bot: Bot, chat_id: int, msg_id: int, text: str,
+                     markup=None) -> bool:
+    """Xabarni tahrirlaydi; flood-limitga urilsa kutib bir marta qayta uradi."""
+    try:
+        await bot.edit_message_text(text, chat_id=chat_id, message_id=msg_id,
+                                    reply_markup=markup)
+        return True
+    except TelegramRetryAfter as exc:
+        await asyncio.sleep(exc.retry_after + 1)
+        with contextlib.suppress(TelegramAPIError):
+            await bot.edit_message_text(text, chat_id=chat_id, message_id=msg_id,
+                                        reply_markup=markup)
+        return True
+    except TelegramAPIError:
+        return False
 
 
 # ------------------------------------------------------------------ yordamchi
@@ -119,15 +143,41 @@ async def _lobby_card(chat_id: int) -> tuple[str, types.InlineKeyboardMarkup] | 
     return text, ui.kb(rows)
 
 
-async def _refresh_lobby(call: types.CallbackQuery) -> bool:
-    card = await _lobby_card(call.message.chat.id)
+async def _delayed_refresh(bot: Bot, chat_id: int, msg_id: int, delay: float) -> None:
+    await asyncio.sleep(delay)
+    _pending_refresh.pop(chat_id, None)
+    card = await _lobby_card(chat_id)
     if card is None:
-        with contextlib.suppress(TelegramBadRequest):
+        return
+    text, markup = card
+    await _safe_edit(bot, chat_id, msg_id, text, markup)
+
+
+async def _refresh_lobby(call: types.CallbackQuery, immediate: bool = False) -> bool:
+    """Lobbi kartasini yangilaydi. Lobbi yopilgan bo'lsa False qaytaradi.
+
+    `immediate=False` — yangilanish EDIT_GAP soniyaga kechiktiriladi va shu
+    oraliqdagi barcha bosishlar bitta tahrirga yig'iladi (flood controldan
+    qochish uchun: guruhda o'nlab odam birdan «Qatnashaman» bosishi mumkin).
+    """
+    chat_id = call.message.chat.id
+    if LOBBIES.get(chat_id) is None:
+        with contextlib.suppress(TelegramAPIError):
             await call.message.edit_reply_markup(reply_markup=None)
         return False
-    text, markup = card
-    with contextlib.suppress(TelegramBadRequest):
-        await call.message.edit_text(text, reply_markup=markup)
+
+    if immediate:
+        card = await _lobby_card(chat_id)
+        if card is None:
+            return False
+        text, markup = card
+        await _safe_edit(call.bot, chat_id, call.message.message_id, text, markup)
+        return True
+
+    task = _pending_refresh.get(chat_id)
+    if task is None or task.done():
+        _pending_refresh[chat_id] = bg.spawn(
+            _delayed_refresh(call.bot, chat_id, call.message.message_id, EDIT_GAP))
     return True
 
 
@@ -217,7 +267,7 @@ async def cb_mode(call: types.CallbackQuery) -> None:
         await call.answer("Faqat tashkilotchi yoki admin o'zgartira oladi.", show_alert=True)
         return
     lobby["mode"] = "battle" if lobby["mode"] == "classic" else "classic"
-    await _refresh_lobby(call)
+    await _refresh_lobby(call, immediate=True)
     await call.answer(MODE_NAME[lobby["mode"]])
 
 
@@ -280,7 +330,7 @@ async def cb_set(call: types.CallbackQuery) -> None:
             return
     key = {"cnt": "count", "tmr": "timer", "col": "col_id"}[what]
     lobby[key] = int(value)
-    await _refresh_lobby(call)
+    await _refresh_lobby(call, immediate=True)
     await call.answer("Saqlandi ✅")
 
 
@@ -289,7 +339,7 @@ async def cb_back(call: types.CallbackQuery) -> None:
     if call.message.chat.id not in LOBBIES:
         await call.answer("Lobbi yopilgan.", show_alert=True)
         return
-    await _refresh_lobby(call)
+    await _refresh_lobby(call, immediate=True)
     await call.answer()
 
 
@@ -512,7 +562,7 @@ async def cb_battle_answer(call: types.CallbackQuery) -> None:
         return
 
     now = time.monotonic()
-    if now - ctx["last_edit"] > 1.2:
+    if now - ctx["last_edit"] > EDIT_GAP:
         ctx["last_edit"] = now
         await media.edit_card(call.bot, ctx["chat_id"], ctx["msg_id"], ctx["photo"],
                               _battle_card(ctx), _battle_kb(ctx))
