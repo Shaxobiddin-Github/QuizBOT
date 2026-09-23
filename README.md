@@ -84,8 +84,14 @@ a'zolari uchun ochiladi).
 Muddat 1/3/6/12/24/48 soat, yoqib-o'chirish va «hozir tozalash» tugmasi bor.
 📌 Qadalgan xabarlar hech qachon o'chirilmaydi.
 
-`/fayllar` — guruhda: bot o'sha guruhga yuborgan fayllar ro'yxati, xabarga
-havola va faylni qayta olish tugmasi bilan.
+`/fayllar` — guruhda: fayllar arxivi (nomi, sanasi, kim yuborgani), xabarga
+havola va faylni qayta olish tugmasi bilan. Bot **admin** bo'lsa, guruh a'zolari
+tashlagan fayllarni ham yig'ib boradi — ular avtomatik tozalashdan himoyalanadi.
+
+**Botni guruhda admin qilish** quyidagilarni yoqadi:
+- 📌 ommaviy xabarni qadash (*Pin messages* huquqi),
+- 📎 a'zolar tashlagan fayllarni arxivlash (admin barcha xabarlarni ko'radi),
+- 🧹 eski xabarlarni ishonchli o'chirish (*Delete messages* huquqi).
 
 > **Cheklov:** Telegram Bot API botga chat tarixini qidirishga ruxsat bermaydi.
 > Shuning uchun `/fayllar` va tozalash faqat bot o'zi yozib borgan xabarlar

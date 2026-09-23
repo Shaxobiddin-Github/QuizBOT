@@ -421,12 +421,17 @@ async def main():
 
     # /fayllar
     await dp.feed_update(bot, H.upd_message("/fayllar", ali, grp))
-    check("fayl yo'q deb aytadi", "fayl topilmadi" in last_texts(S)[-1],
+    check("fayl yo'q deb aytadi", "fayl yig'ilmagan" in last_texts(S)[-1],
           last_texts(S)[-1][:80])
     await db.record_sent(-1001, 999001, "document", "FILEID1", "maruza.pdf", "")
+    # a'zo tashlagan fayl ham arxivga tushadi va tozalashdan himoyalanadi
+    await db.record_sent(-1001, 999003, "document", "FILEID2", "amaliy.docx", "",
+                         author="Vali", keep=1)
     await dp.feed_update(bot, H.upd_message("/fayllar", ali, grp))
     ftext = last_texts(S)[-1]
     check("fayllar ro'yxati", "maruza.pdf" in ftext, ftext[:100])
+    check("a'zo fayli va muallifi", "amaliy.docx" in ftext and "Vali" in ftext,
+          ftext[:200])
     check("xabarga havola", "t.me/c/" in ftext)
     ndoc = sum(1 for k, _, _ in S.calls if k == "SendDocument")
     await dp.feed_update(bot, H.upd_call("gf:-1001:999001", ali, grp))
@@ -460,9 +465,12 @@ async def main():
     check("DeleteMessage chaqirildi",
           sum(1 for k, _, _ in S.calls if k == "DeleteMessage") > ndel)
     left = await db.fetch_all(
-        "SELECT pinned FROM sent_messages WHERE chat_id=-1001")
-    check("qadalgan xabar o'chmadi", all(r["pinned"] == 1 for r in left) and left,
-          f"qolgan={len(left)}")
+        "SELECT pinned, keep, file_name FROM sent_messages WHERE chat_id=-1001")
+    check("qadalgan/saqlangan xabarlar o'chmadi",
+          bool(left) and all(r["pinned"] == 1 or r["keep"] == 1 for r in left),
+          f"qolgan={[dict(r) for r in left]}")
+    check("a'zo fayli tozalashdan saqlandi",
+          any(r["file_name"] == "amaliy.docx" for r in left))
     after = await db.fetch_one("SELECT COUNT(*) n FROM sent_messages WHERE chat_id=-1001")
     check("ro'yxat qisqardi", after["n"] < before["n"], f"{before['n']} -> {after['n']}")
 

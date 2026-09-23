@@ -196,6 +196,10 @@ async def _migrate(conn: aiosqlite.Connection) -> None:
                      ("option_images", "TEXT DEFAULT ''")):
         if col not in qcols:
             await conn.execute(f"ALTER TABLE questions ADD COLUMN {col} {ddl}")
+    async with conn.execute("PRAGMA table_info(sent_messages)") as cur:
+        smcols = {r["name"] for r in await cur.fetchall()}
+    if "author" not in smcols:
+        await conn.execute("ALTER TABLE sent_messages ADD COLUMN author TEXT DEFAULT ''")
     async with conn.execute("PRAGMA table_info(chats)") as cur:
         chcols = {r["name"] for r in await cur.fetchall()}
     for col in ("username", "invite_link"):
@@ -272,14 +276,20 @@ FILE_KINDS = ("document", "photo", "video", "audio", "voice", "animation")
 
 
 async def record_sent(chat_id: int, message_id: int, kind: str, file_id: str = "",
-                      file_name: str = "", caption: str = "") -> None:
+                      file_name: str = "", caption: str = "", author: str = "",
+                      keep: int = 0) -> None:
+    """Guruhdagi xabarni ro'yxatga oladi.
+
+    `author` bo'sh bo'lsa — xabarni bot yuborgan. `keep=1` bo'lsa avtomatik
+    tozalash bu xabarga tegmaydi (a'zolar yuborgan fayllar shunday saqlanadi).
+    """
     await execute(
         """INSERT INTO sent_messages(chat_id, message_id, kind, file_id, file_name,
-                                     caption, sent_at)
-           VALUES(?,?,?,?,?,?,?)
+                                     caption, author, keep, sent_at)
+           VALUES(?,?,?,?,?,?,?,?,?)
            ON CONFLICT(chat_id, message_id) DO NOTHING""",
         (chat_id, message_id, kind, file_id or "", (file_name or "")[:200],
-         (caption or "")[:300], now()))
+         (caption or "")[:300], (author or "")[:100], keep, now()))
 
 
 async def mark_pinned(chat_id: int, message_id: int) -> None:

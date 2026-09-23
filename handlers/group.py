@@ -631,23 +631,33 @@ def _msg_link(chat_id: int, message_id: int) -> str | None:
 async def cmd_files(message: types.Message) -> None:
     rows = await db.chat_files(message.chat.id, 30)
     if not rows:
+        me = await message.bot.get_me()
+        admin = False
+        with contextlib.suppress(Exception):
+            member = await message.bot.get_chat_member(message.chat.id, me.id)
+            admin = member.status == "administrator"
+        hint = ("" if admin else
+                "\n\n⚠️ <b>Bot bu guruhda admin emas.</b> Admin qilsangiz, guruhga "
+                "tashlangan fayllarni ham shu ro'yxatga yig'ib boradi.")
         await message.answer(
-            "📎 <b>Bu guruhda bot yuborgan fayl topilmadi.</b>\n\n"
+            "📎 <b>Bu guruhda hali fayl yig'ilmagan.</b>\n\n"
             "<i>Telegram botga chat tarixini qidirishga ruxsat bermaydi — "
-            "shuning uchun bot faqat o'zi yozib borgan fayllarni ko'rsata oladi. "
-            "Bu ro'yxat shu funksiya qo'shilgandan keyingi fayllardan yig'iladi.</i>")
+            "shuning uchun ro'yxat faqat shu funksiya qo'shilgandan keyingi "
+            "fayllardan yig'iladi.</i>" + hint)
         return
 
-    lines = [f"📎 <b>Bot yuborgan fayllar</b> — {len(rows)} ta\n"]
+    lines = [f"📎 <b>Guruh fayllari</b> — {len(rows)} ta\n"]
     rows_kb: list[list[tuple[str, str]]] = []
     for i, r in enumerate(rows, 1):
         icon = KIND_ICON.get(r["kind"], "📎")
         name = r["file_name"] or r["kind"]
         when = (r["sent_at"] or "")[:16].replace("T", " ")
         link = _msg_link(r["chat_id"], r["message_id"])
+        author = (r["author"] if "author" in r.keys() else "") or ""
         title = f"{icon} <b>{ui.esc(ui.shorten(name, 45))}</b>"
+        who = f" · {ui.esc(author)}" if author else " · bot"
         lines.append(f"{i}. " + (f'<a href="{link}">{title}</a>' if link else title)
-                     + f"\n   <i>{when}</i>")
+                     + f"\n   <i>{when}{who}</i>")
         if r["file_id"]:
             rows_kb.append([(f"{icon} {ui.shorten(name, 28)}",
                              f"gf:{r['chat_id']}:{r['message_id']}")])

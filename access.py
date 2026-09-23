@@ -113,6 +113,35 @@ async def share_label(col) -> str:
     return "👥 " + ", ".join(titles) + more
 
 
+ATTACHMENTS = (
+    ("document", lambda m: (m.document.file_id, m.document.file_name or "hujjat")),
+    ("video", lambda m: (m.video.file_id, m.video.file_name or "video.mp4")),
+    ("audio", lambda m: (m.audio.file_id, m.audio.file_name or "audio")),
+    ("animation", lambda m: (m.animation.file_id,
+                             m.animation.file_name or "animatsiya")),
+    ("voice", lambda m: (m.voice.file_id, "ovozli xabar")),
+    ("photo", lambda m: (m.photo[-1].file_id, "rasm.jpg")),
+)
+
+
+async def record_member_file(message) -> None:
+    """Guruhga a'zo tashlagan faylni arxivga qo'shadi.
+
+    Bot faqat admin bo'lsa yoki privacy rejimi o'chirilgan bo'lsa bunday
+    xabarlarni ko'radi. Bunday yozuvlar keep=1 bilan saqlanadi — avtomatik
+    tozalash birovning faylini o'chirmaydi.
+    """
+    for kind, getter in ATTACHMENTS:
+        if getattr(message, kind, None):
+            file_id, file_name = getter(message)
+            await db.record_sent(
+                message.chat.id, message.message_id, kind, file_id, file_name,
+                message.caption or "",
+                author=(message.from_user.full_name if message.from_user else ""),
+                keep=1)
+            return
+
+
 class ChatTracker(BaseMiddleware):
     """Har bir yangilanishda guruh va undagi foydalanuvchini bazaga belgilab boradi."""
 
