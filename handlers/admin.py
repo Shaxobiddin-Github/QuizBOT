@@ -13,6 +13,7 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
+import bg
 import config
 import db
 import ui
@@ -216,7 +217,7 @@ async def cb_go(call: types.CallbackQuery, state: FSMContext) -> None:
     await call.answer("Yuborish boshlandi")
     with contextlib.suppress(TelegramBadRequest):
         await call.message.edit_text("📤 Yuborilmoqda…")
-    asyncio.create_task(_run_cast(call.bot, call.message.chat.id,
+    bg.spawn(_run_cast(call.bot, call.message.chat.id,
                                   call.message.message_id, target, src_chat, src_msg))
 
 

@@ -2,21 +2,26 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import random
 from datetime import datetime, timezone
 
 from aiogram import F, Router, types
-from aiogram.exceptions import TelegramBadRequest
 
 import access
 import db
+import media
 import ui
 
 router = Router(name="pro")
 
 # (session_id, q_index) -> yashirilgan variantlar (50:50)
 FIFTY: dict[tuple[int, int], set[int]] = {}
+
+
+def forget(sid: int) -> None:
+    """Sessiya yopilganda 50:50 ma'lumotini tozalash."""
+    for key in [k for k in FIFTY if k[0] == sid]:
+        FIFTY.pop(key, None)
 
 
 # ------------------------------------------------------------------ boshlash
@@ -45,26 +50,22 @@ async def start_quiz(message: types.Message, user: types.User,
 
     questions = await db.questions_by_ids(q_ids)
     q_ids = [q for q in q_ids if q in questions]
-    perm = []
-    for qid in q_ids:
-        order = list(range(len(questions[qid]["options"])))
-        if prefs["shuffle_a"]:
-            random.shuffle(order)
-        perm.append(order)
+    perm = [db.make_perm(questions[qid], bool(prefs["shuffle_a"])) for qid in q_ids]
 
-    await db.abort_active(user.id)
+    from handlers import classic
+    await classic.stop_private(user.id)
     settings = {"instant": prefs["instant"], "perm": perm,
                 "mistakes": int(only_mistakes)}
     sid = await db.create_session(user.id, message.chat.id, col_id or 0, "pro",
                                   q_ids, settings)
-    text, markup = await render(sid, 0, user.id)
-    await message.answer(text, reply_markup=markup)
+    text, markup, photo = await render(message.bot, sid, 0, user.id)
+    await media.send(message.bot, message.chat.id, text, markup, photo)
 
 
 # ------------------------------------------------------------------- render
 async def _ctx(sid: int, index: int):
     session = await db.get_session(sid)
-    if not session:
+    if not session or not session["q_ids"]:
         return None
     index = max(0, min(index, len(session["q_ids"]) - 1))
     qid = session["q_ids"][index]
@@ -77,11 +78,30 @@ async def _ctx(sid: int, index: int):
     return session, index, q, shown, correct
 
 
-async def render(sid: int, index: int, user_id: int,
-                 reveal: bool = False) -> tuple[str, types.InlineKeyboardMarkup]:
+def _options_block(q: dict, shown: list[str], chosen, correct, reveal: bool,
+                   hidden: set[int]) -> str:
+    if not media.has_option_images(q):
+        return ui.render_options(shown, chosen, correct, reveal, hidden)
+    letters = ui.LETTERS[:len(shown)]
+    out = f"<i>🖼 Javob variantlari rasmda: {letters[0]}–{letters[-1]}</i>"
+    if hidden:
+        out += "\n💡 50:50 — olib tashlandi: " + ", ".join(ui.LETTERS[i] for i in sorted(hidden))
+    if chosen is not None:
+        out += f"\nTanlangan: <b>{ui.LETTERS[chosen]}</b>"
+    return out
+
+
+def _answer_label(q: dict, shown: list[str], i: int) -> str:
+    if media.has_option_images(q):
+        return ui.LETTERS[i]
+    return f"{ui.LETTERS[i]}) {ui.esc(shown[i])}"
+
+
+async def render(bot, sid: int, index: int, user_id: int, reveal: bool = False):
+    """-> (matn, klaviatura, rasm yoki None)"""
     ctx = await _ctx(sid, index)
     if ctx is None:
-        return "Sessiya topilmadi.", ui.kb([[("🏠 Menyu", "pro:home")]])
+        return "Sessiya topilmadi.", ui.kb([[("🏠 Menyu", "pro:home")]]), None
     session, index, q, shown, correct = ctx
     total = len(session["q_ids"])
 
@@ -111,15 +131,16 @@ async def render(sid: int, index: int, user_id: int,
         f"{ui.progress_bar(answered, total)} <b>{index + 1}/{total}</b>"
         f"  ·  ✅{n_ok} ❌{n_bad}  ·  ⏱ {ui.fmt_time(elapsed)}\n"
     )
-    body = (f"\n<b>{index + 1}-savol.</b> {ui.esc(q['text'])}"
+    limit = 600 if media.has_media(q) else 3000
+    body = (f"\n<b>{index + 1}-savol.</b> {ui.esc(ui.shorten(q['text'], limit))}"
             + ("  🎓" if learned else "") + "\n\n"
-            + ui.render_options(shown, chosen, correct, show_truth, hidden))
+            + _options_block(q, shown, chosen, correct, show_truth, hidden))
     if show_truth and mine is not None:
         body += ("\n\n<b>✅ To'g'ri!</b>" if mine["is_correct"]
                  else f"\n\n<b>❌ Xato.</b> To'g'ri javob — "
-                      f"<b>{ui.LETTERS[correct]}) {ui.esc(shown[correct])}</b>")
+                      f"<b>{_answer_label(q, shown, correct)}</b>")
         if q["explanation"]:
-            body += f"\n<i>💡 {ui.esc(q['explanation'])}</i>"
+            body += f"\n<i>💡 {ui.esc(ui.shorten(q['explanation'], 300))}</i>"
 
     # --- klaviatura
     rows: list[list[tuple[str, str]]] = []
@@ -158,14 +179,34 @@ async def render(sid: int, index: int, user_id: int,
                   f"pro:l:{sid}:{index}"))
     rows.append(tools)
     rows.append([(f"🏁 Yakunlash ({answered}/{total})", f"pro:fin:{sid}")])
-    return head + body, ui.kb(rows)
+    return head + body, ui.kb(rows), await media.photo_for(bot, q)
+
+
+async def _redraw(bot, message, user_id: int, sid: int, index: int,
+                  reveal: bool = False) -> types.Message:
+    text, markup, photo = await render(bot, sid, index, user_id, reveal)
+    return await media.show(bot, message.chat.id, message, text, markup, photo)
 
 
 async def _edit(call: types.CallbackQuery, sid: int, index: int,
-                reveal: bool = False) -> None:
-    text, markup = await render(sid, index, call.from_user.id, reveal)
-    with contextlib.suppress(TelegramBadRequest):
-        await call.message.edit_text(text, reply_markup=markup)
+                reveal: bool = False) -> types.Message:
+    return await _redraw(call.bot, call.message, call.from_user.id, sid, index, reveal)
+
+
+async def _show_text(call: types.CallbackQuery, text: str, markup) -> None:
+    await media.show(call.bot, call.message.chat.id, call.message, text, markup)
+
+
+async def _own(call: types.CallbackQuery, sid: int) -> dict | None:
+    """Faqat sessiya egasi boshqara oladi."""
+    session = await db.get_session(sid)
+    if not session or session["mode"] not in ("pro", "classic"):
+        await call.answer("Sessiya topilmadi.", show_alert=True)
+        return None
+    if session["owner_id"] != call.from_user.id:
+        await call.answer("Bu sizning testingiz emas.", show_alert=True)
+        return None
+    return session
 
 
 # ---------------------------------------------------------------- callbacks
@@ -196,6 +237,9 @@ async def on_answer(call: types.CallbackQuery) -> None:
     if session["status"] != "active":
         await call.answer("Bu test allaqachon yakunlangan.", show_alert=True)
         return
+    if not 0 <= opt < len(shown):
+        await call.answer()
+        return
 
     is_ok = opt == correct
     await db.save_answer(sid, call.from_user.id, call.from_user.full_name,
@@ -203,19 +247,18 @@ async def on_answer(call: types.CallbackQuery) -> None:
     await call.answer("✅ To'g'ri!" if is_ok else "❌ Xato")
 
     instant = bool(session["settings"].get("instant", 1))
-    total = len(session["q_ids"])
-    await _edit(call, sid, index, reveal=instant)
+    msg = await _edit(call, sid, index, reveal=instant)
 
     nxt = await _next_unanswered(sid, call.from_user.id, index)
     if nxt is None:
         await asyncio.sleep(1.0 if instant else 0.2)
-        await _finish(call, sid)
+        await _finish(call, sid, msg)
         return
     await asyncio.sleep(1.6 if instant else 0.15)
     fresh = await db.get_session(sid)
     if fresh and fresh["status"] == "active":
         await db.set_cursor(sid, nxt)
-        await _edit(call, sid, nxt)
+        await _redraw(call.bot, msg, call.from_user.id, sid, nxt)
 
 
 async def _next_unanswered(sid: int, user_id: int, current: int) -> int | None:
@@ -231,6 +274,8 @@ async def _next_unanswered(sid: int, user_id: int, current: int) -> int | None:
 @router.callback_query(F.data.startswith("pro:g:"))
 async def on_goto(call: types.CallbackQuery) -> None:
     _, _, sid, index = call.data.split(":")
+    if await _own(call, int(sid)) is None:
+        return
     await db.set_cursor(int(sid), int(index))
     await _edit(call, int(sid), int(index))
     await call.answer()
@@ -240,6 +285,8 @@ async def on_goto(call: types.CallbackQuery) -> None:
 async def on_fifty(call: types.CallbackQuery) -> None:
     _, _, sid, index = call.data.split(":")
     sid, index = int(sid), int(index)
+    if await _own(call, sid) is None:
+        return
     ctx = await _ctx(sid, index)
     if ctx is None:
         await call.answer()
@@ -250,13 +297,15 @@ async def on_fifty(call: types.CallbackQuery) -> None:
     keep = max(0, len(shown) - 2)
     FIFTY[(sid, index)] = set(wrong[:keep])
     await _edit(call, sid, index)
-    await call.answer("💡 Ikkita variant olib tashlandi")
+    await call.answer("💡 Ortiqcha variantlar olib tashlandi")
 
 
 @router.callback_query(F.data.startswith("pro:l:"))
 async def on_learned(call: types.CallbackQuery) -> None:
     _, _, sid, index = call.data.split(":")
     sid, index = int(sid), int(index)
+    if await _own(call, sid) is None:
+        return
     ctx = await _ctx(sid, index)
     if ctx is None:
         await call.answer()
@@ -271,9 +320,8 @@ async def on_learned(call: types.CallbackQuery) -> None:
 async def on_map(call: types.CallbackQuery) -> None:
     _, _, sid, page = call.data.split(":")
     sid, page = int(sid), int(page)
-    session = await db.get_session(sid)
+    session = await _own(call, sid)
     if not session:
-        await call.answer()
         return
     total = len(session["q_ids"])
     done = {r["q_index"]: r["is_correct"]
@@ -303,49 +351,51 @@ async def on_map(call: types.CallbackQuery) -> None:
     if pager:
         rows.append(pager)
     rows.append([("↩️ Savolga qaytish", f"pro:g:{sid}:{session['cursor']}")])
-    with contextlib.suppress(TelegramBadRequest):
-        await call.message.edit_text(
-            f"🗺 <b>Savollar xaritasi</b> — {len(done)}/{total} javob berilgan\n"
-            f"Istalgan raqamni bosing:", reply_markup=ui.kb(rows))
+    await _show_text(call,
+                     f"🗺 <b>Savollar xaritasi</b> — {len(done)}/{total} javob berilgan\n"
+                     f"Istalgan raqamni bosing:", ui.kb(rows))
     await call.answer()
 
 
 @router.callback_query(F.data.startswith("pro:fin:"))
 async def on_finish_ask(call: types.CallbackQuery) -> None:
     sid = int(call.data.split(":")[2])
-    session = await db.get_session(sid)
+    session = await _own(call, sid)
     if not session:
-        await call.answer()
         return
     total = len(session["q_ids"])
     done = len(await db.session_answers(sid, call.from_user.id))
-    if done >= total:
+    if done >= total or session["status"] != "active":
         await _finish(call, sid)
         await call.answer()
         return
-    await call.message.edit_text(
-        f"🏁 <b>Testni yakunlaysizmi?</b>\n\n"
-        f"Javob berilgan: <b>{done}/{total}</b>\n"
-        f"Qolgan {total - done} ta savol javobsiz hisoblanadi.",
-        reply_markup=ui.kb([
-            [("✅ Ha, yakunlash", f"pro:fin2:{sid}")],
-            [("↩️ Davom etish", f"pro:g:{sid}:{session['cursor']}")],
-        ]))
+    await _show_text(call,
+                     f"🏁 <b>Testni yakunlaysizmi?</b>\n\n"
+                     f"Javob berilgan: <b>{done}/{total}</b>\n"
+                     f"Qolgan {total - done} ta savol javobsiz hisoblanadi.",
+                     ui.kb([
+                         [("✅ Ha, yakunlash", f"pro:fin2:{sid}")],
+                         [("↩️ Davom etish", f"pro:g:{sid}:{session['cursor']}")],
+                     ]))
     await call.answer()
 
 
 @router.callback_query(F.data.startswith("pro:fin2:"))
 async def on_finish_do(call: types.CallbackQuery) -> None:
-    await _finish(call, int(call.data.split(":")[2]))
+    sid = int(call.data.split(":")[2])
+    if await _own(call, sid) is None:
+        return
+    await _finish(call, sid)
     await call.answer()
 
 
-async def _finish(call: types.CallbackQuery, sid: int) -> None:
+async def _finish(call: types.CallbackQuery, sid: int, message=None) -> None:
     session = await db.get_session(sid)
-    if not session:
+    if not session or session["owner_id"] != call.from_user.id:
         return
     if session["status"] == "active":
         await db.finish_session(sid)
+    forget(sid)
     uid = call.from_user.id
     total = len(session["q_ids"])
     rows = await db.session_answers(sid, uid)
@@ -373,8 +423,8 @@ async def _finish(call: types.CallbackQuery, sid: int) -> None:
     if wrong:
         buttons.append([("🔁 Xatolar ustida ishlash", "su:pro:mistakes")])
     buttons.append([("🔄 Yangi test", "su:pro:back"), ("🎯 Klassik", "su:classic:back")])
-    with contextlib.suppress(TelegramBadRequest):
-        await call.message.edit_text(text, reply_markup=ui.kb(buttons))
+    await media.show(call.bot, call.message.chat.id, message or call.message, text,
+                     ui.kb(buttons))
 
 
 # ------------------------------------------------------------------- review
@@ -402,22 +452,29 @@ async def on_review(call: types.CallbackQuery) -> None:
     page = max(0, min(page, pages - 1))
     chunk = rows[page * per_page:(page + 1) * per_page]
     questions = await db.questions_by_ids([r["question_id"] for r in chunk])
+    perms = session["settings"].get("perm") or []
 
     out = [f"{titles[flt]} — {len(rows)} ta  (sahifa {page + 1}/{pages})\n"]
     for r in chunk:
         q = questions.get(r["question_id"])
         if not q:
             continue
-        order = session["settings"]["perm"][r["q_index"]]
+        idx = r["q_index"]
+        order = perms[idx] if idx < len(perms) else list(range(len(q["options"])))
         shown = [q["options"][i] for i in order]
         correct = order.index(q["correct"])
         icon = "✅" if r["is_correct"] else "❌"
-        out.append(f"{icon} <b>{r['q_index'] + 1}.</b> {ui.esc(q['text'])}")
+        pic = "🖼 " if media.has_media(q) else ""
+        out.append(f"{icon} <b>{idx + 1}.</b> {pic}{ui.esc(ui.shorten(q['text'], 300))}")
+
+        def label(k: int) -> str:
+            return ui.LETTERS[k] if media.has_option_images(q) else ui.esc(shown[k])
+
         if not r["is_correct"] and 0 <= r["chosen"] < len(shown):
-            out.append(f"   ✗ Siz: <i>{ui.esc(shown[r['chosen']])}</i>")
-        out.append(f"   ✓ To'g'ri: <b>{ui.esc(shown[correct])}</b>")
+            out.append(f"   ✗ Siz: <i>{label(r['chosen'])}</i>")
+        out.append(f"   ✓ To'g'ri: <b>{label(correct)}</b>")
         if q["explanation"]:
-            out.append(f"   💡 <i>{ui.esc(q['explanation'])}</i>")
+            out.append(f"   💡 <i>{ui.esc(ui.shorten(q['explanation'], 300))}</i>")
         out.append("")
 
     nav = []
@@ -436,6 +493,5 @@ async def on_review(call: types.CallbackQuery) -> None:
     body = "\n".join(out)
     if len(body) > 4000:
         body = body[:3990] + "…"
-    with contextlib.suppress(TelegramBadRequest):
-        await call.message.edit_text(body, reply_markup=ui.kb(keyboard))
+    await _show_text(call, body, ui.kb(keyboard))
     await call.answer()

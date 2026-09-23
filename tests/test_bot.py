@@ -1,6 +1,6 @@
 """To'liq integratsion test: haqiqiy handler'lar, soxta Telegram API."""
 import asyncio, io, os, re, sys, json, traceback
-sys.path.insert(0, "/home/shaxobiddin/BOTS/quizbot")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import harness as H
 from aiogram import types
@@ -199,7 +199,8 @@ async def main():
 
     print("\n━━━ 7. IMPORT: JSON / DOCX / MATN ━━━")
     import docx
-    tmp = "/tmp/claude-1000/-home-shaxobiddin-BOTS-quizbot/41e1ad43-3259-4c4d-94c4-3dfedfcf562b/scratchpad"
+    import tempfile
+    tmp = tempfile.mkdtemp()
     d = docx.Document()
     for l in ["1. Test savol bir?", "+To'g'ri", "-Xato1", "-Xato2"]:
         d.add_paragraph(l)
@@ -364,46 +365,90 @@ async def main():
     check("hisobot chiqdi", "Yuborish tugadi" in S.messages.get(cmid, ""),
           S.messages.get(cmid, "")[:100])
 
-    print("\n━━━ 12. IQ TEST ━━━")
+    print("\n━━━ 12. IQ TEST (standart tuzilma + rasmlar) ━━━")
     from handlers import iq as iq_h
+    import iq_score, media
+
+    def last_sent():
+        for k, m, r in reversed(S.calls):
+            if k in ("SendMessage", "SendPhoto") and r.message_id not in H.DELETED:
+                return r.message_id
+
     iqcol = await iq_h.iq_collection()
-    check("IQ bazasi yuklandi", iqcol is not None and await db.count_questions(iqcol) >= 50,
-          str(await db.count_questions(iqcol)) if iqcol else "yo'q")
+    n_iq = await db.count_questions(iqcol) if iqcol else 0
+    check("IQ bazasi yuklandi (matn + rasm)", n_iq >= 120, str(n_iq))
+    n_img = (await db.fetch_one("SELECT COUNT(*) AS n FROM questions WHERE collection_id=?"
+                                " AND option_images != ''", (iqcol,)))["n"]
+    check("rasmli matritsalar bazada", n_img >= 60, str(n_img))
+    anyq = await db.fetch_one("SELECT id FROM questions WHERE collection_id=? AND "
+                              "option_images != '' ORDER BY id LIMIT 1", (iqcol,))
+    qd = await db.question(anyq["id"])
+    check("rasm fayllari diskda", media.is_local(qd["image"])
+          and all(media.is_local(x) for x in qd["option_images"]))
+    check("rasmli variantlar aralashtirilmaydi",
+          db.make_perm(qd) == list(range(len(qd["options"]))))
+    await seed.ensure_iq()
+    check("qayta ishga tushganda takrorlanmaydi", await db.count_questions(iqcol) == n_iq)
     quiz_vis = {c["id"] for c in await access.visible_collections(bot, 101)}
     check("IQ bazasi oddiy ro'yxatda yo'q", iqcol not in quiz_vis)
 
     await dp.feed_update(bot, H.upd_message("🧩 IQ test", ali, priv))
     check("IQ qoidalari", "IQ test" in last_texts(S)[-1] and "daqiqa" in last_texts(S)[-1])
     check("ogohlantirish bor", "rasmiy" in last_texts(S)[-1].lower())
+    n_calls = len(S.calls)
     await dp.feed_update(bot, H.upd_call("iq:go", ali, priv))
-    iqmid = S.calls[-1][2].message_id
-    check("IQ savol kartasi", "IQ test" in S.messages[iqmid] and "⏳" in S.messages[iqmid],
-          S.messages[iqmid][:100])
     iqs = await db.active_session(101, "iq")
-    check("IQ sessiyasi", iqs is not None and len(iqs["q_ids"]) == iq_h.QUESTION_COUNT,
+    check("IQ sessiyasi (30 savol)", iqs is not None and len(iqs["q_ids"]) == iq_h.QUESTION_COUNT,
           str(len(iqs["q_ids"])) if iqs else "yo'q")
-
     iqsid = iqs["id"]
     iqqs = await db.questions_by_ids(iqs["q_ids"])
     diffs = [iqqs[q]["difficulty"] for q in iqs["q_ids"]]
     check("osondan qiyinga tartiblangan", diffs == sorted(diffs), str(diffs))
+    cats = [iqqs[q]["category"] for q in iqs["q_ids"]]
+    check("12 ta Raven matritsasi", cats.count("Matritsalar (Raven)") == 12, str(cats))
+    check("uchala soha qamralgan",
+          {iq_h._domain_of(c) for c in cats} >= set(iq_h.DOMAINS), str(set(cats)))
+    check("qiyinlik 1..5 qamralgan", set(diffs) >= {1, 2, 3, 4, 5}, str(set(diffs)))
+    cur = last_sent()
+    check("IQ savol kartasi", "IQ test" in S.messages[cur] and "⏳" in S.messages[cur],
+          S.messages[cur][:100])
 
-    # hammasiga to'g'ri javob beramiz
+    # hammasiga to'g'ri javob beramiz (rasm <-> matn almashishi bilan)
     for i, qid in enumerate(iqs["q_ids"]):
         order = iqs["settings"]["perm"][i]
         corr = order.index(iqqs[qid]["correct"])
-        await dp.feed_update(bot, H.upd_call(f"iq:a:{iqsid}:{i}:{corr}", ali, priv, iqmid))
-    res = S.messages[iqmid]
+        await dp.feed_update(bot, H.upd_call(f"iq:a:{iqsid}:{i}:{corr}", ali, priv, cur))
+        cur = last_sent()
+    kinds = [k for k, _, _ in S.calls[n_calls:]]
+    check("rasmli savollar yuborildi", "SendPhoto" in kinds)
+    check("rasm → rasm tahrirlandi", "EditMessageMedia" in kinds)
+    check("rasm ↔ matn xabari almashtirildi", "DeleteMessage" in kinds)
+    check("file_id keshlandi",
+          (await db.fetch_one("SELECT COUNT(*) AS n FROM media_cache"))["n"] > 0)
+    res = S.messages[cur]
     check("IQ natija chiqdi", "IQ test yakunlandi" in res, res[:100])
-    check("maksimal ball ~140", "<b>140</b>" in res, res[:300])
-    check("bo'limlar tahlili", "Bo'limlar bo'yicha" in res)
-    check("natijada ogohlantirish", "Rasmiy" in res or "rasmiy" in res)
-    await dp.feed_update(bot, H.upd_call(f"iq:rev:{iqsid}:0", ali, priv, iqmid))
-    check("javoblar tahlili", "Javoblar tahlili" in S.messages[iqmid])
+    m = re.search(r"IQ: <b>(\d+)</b>", res)
+    check("hammasi to'g'ri → IQ ≥ 125", bool(m) and int(m.group(1)) >= 125, res[:200])
+    check("ishonch oralig'i va persentil", "ishonch oralig'i" in res and "Persentil" in res)
+    check("WAIS tasnifi", "WAIS" in res)
+    check("sohalar tahlili", "Sohalar bo'yicha" in res and "Vizual-fazoviy" in res)
+    check("natijada ogohlantirish", "rasmiy" in res.lower())
+    await dp.feed_update(bot, H.upd_call(f"iq:rev:{iqsid}:0", ali, priv, cur))
+    cur = last_sent()
+    check("javoblar tahlili", "Javoblar tahlili" in S.messages[cur])
+    see = [b for b in btns(S) if b.startswith("iq:see:")]
+    check("rasmli savolni ko'rish tugmasi", bool(see), str(btns(S)))
+    if see:
+        await dp.feed_update(bot, H.upd_call(see[0], ali, priv, cur))
+        cur = last_sent()
+        check("rasm to'g'ri javob bilan", cur in H.PHOTO_MSGS
+              and "To'g'ri javob" in S.messages[cur], S.messages[cur][:120])
+    await dp.feed_update(bot, H.upd_message("🧩 IQ test", ali, priv))
+    check("oxirgi natija ko'rsatiladi", "Oxirgi natijangiz" in last_texts(S)[-1])
 
     # vaqt tugashi
     await dp.feed_update(bot, H.upd_call("iq:go", vali, H.chat(102)))
-    vmid = S.calls[-1][2].message_id
+    vmid = last_sent()
     vs = await db.active_session(102, "iq")
     past = (__import__("datetime").datetime.now(__import__("datetime").timezone.utc)
             - __import__("datetime").timedelta(minutes=1)).isoformat(timespec="seconds")
@@ -413,8 +458,175 @@ async def main():
     await dp.feed_update(bot, H.upd_call(f"iq:a:{vs['id']}:0:0", vali, H.chat(102), vmid))
     vs2 = await db.get_session(vs["id"])
     check("vaqt tugagach yakunlanadi", vs2["status"] in ("timeout", "done"), vs2["status"])
-    check("vaqt tugagach natija", "IQ test yakunlandi" in S.messages[vmid],
-          S.messages[vmid][:80])
+    check("vaqt tugagach natija", "IQ test yakunlandi" in S.messages[last_sent()],
+          S.messages[last_sent()][:80])
+    check("javobsiz → past IQ", re.search(r"IQ: <b>(\d+)</b>", S.messages[last_sent()])
+          and int(re.search(r"IQ: <b>(\d+)</b>", S.messages[last_sent()]).group(1)) < 80)
+
+    print("\n━━━ 13. IQ HISOBI (IRT 3PL) ━━━")
+    def rep_for(k):
+        items = [iq_score.Item(d, 6, i < k) for i, d in
+                 enumerate([1] * 6 + [2] * 6 + [3] * 6 + [4] * 6 + [5] * 6)]
+        # osonlaridan boshlab k tasi to'g'ri
+        return iq_score.report(items)
+    scores = [rep_for(k).iq for k in (0, 6, 12, 18, 24, 30)]
+    check("ball monoton o'sadi", scores == sorted(scores) and len(set(scores)) == 6, str(scores))
+    mid = rep_for(15)
+    check("yarmi to'g'ri → o'rtacha (90–110)", 90 <= mid.iq <= 110, str(mid.iq))
+    check("ishonch oralig'i ichida", mid.ci_low <= mid.iq <= mid.ci_high)
+    check("persentil 100 → 50%", abs(iq_score.percentile(0) - 50) < 1e-9)
+    check("WAIS toifalari", iq_score.classify(131)[0] == "Juda yuqori"
+          and iq_score.classify(100)[0] == "O'rtacha" and iq_score.classify(65)[0] == "Past")
+    hard = iq_score.report([iq_score.Item(5, 8, True)] * 5 + [iq_score.Item(1, 8, False)] * 5)
+    easy = iq_score.report([iq_score.Item(1, 8, True)] * 5 + [iq_score.Item(5, 8, False)] * 5)
+    check("qiyin savol ko'proq ball beradi", hard.iq != easy.iq and hard.se > easy.se * 0.5)
+
+    print("\n━━━ 14. TUZATILGAN XATOLAR ━━━")
+    # a) shaxsiy test guruh o'yinini to'xtatmasligi kerak
+    access._member_cache.clear()
+    H.MEMBERS.pop(-1001, None)
+    await dp.feed_update(bot, H.upd_message("/pro", ali, grp))
+    lmid = S.calls[-1][2].message_id
+    await dp.feed_update(bot, H.upd_call("g:join", ali, grp, lmid))
+    await dp.feed_update(bot, H.upd_call("g:set:tmr:30", ali, grp, lmid))
+    await dp.feed_update(bot, H.upd_call("g:go", ali, grp, lmid))
+    await asyncio.sleep(2.3)
+    g = await db.fetch_one("SELECT id FROM sessions WHERE chat_id=-1001 AND status='active'"
+                           " ORDER BY id DESC LIMIT 1")
+    check("guruh jangi boshlandi", g is not None)
+    await dp.feed_update(bot, H.upd_call("su:pro:go", ali, priv))
+    await dp.feed_update(bot, H.upd_message("/stop", ali, priv))
+    gs = await db.get_session(g["id"]) if g else None
+    check("shaxsiy test/stop guruh o'yiniga tegmaydi", gs and gs["status"] == "active",
+          gs and gs["status"])
+    await dp.feed_update(bot, H.upd_message("/stop", ali, grp))
+    gs = await db.get_session(g["id"]) if g else None
+    check("guruhda /stop ishlaydi", gs and gs["status"] == "aborted")
+
+    # b) default baza o'chmaydi
+    dcol = await db.default_collection_id()
+    await db.execute("UPDATE collections SET owner_id=101 WHERE id=?", (dcol,))
+    await dp.feed_update(bot, H.upd_call(f"lib:open:{dcol}", ali, priv))
+    check("default bazada o'chirish tugmasi yo'q", f"lib:del:{dcol}" not in btns(S))
+    await dp.feed_update(bot, H.upd_call(f"lib:del2:{dcol}", ali, priv))
+    check("default baza savollari saqlandi", await db.count_questions(dcol) == 197,
+          str(await db.count_questions(dcol)))
+
+    # c) klassik natijadan «xatolarni ko'rish» yiqilmaydi
+    cs = await db.fetch_one("SELECT id FROM sessions WHERE owner_id=101 AND chat_id=101 "
+                            "AND mode='classic' ORDER BY id LIMIT 1")
+    await dp.feed_update(bot, H.upd_call(f"pro:rev:{cs['id']}:all:0", ali, priv))
+    check("klassik tahlil ishlaydi", "Barcha javoblar" in last_texts(S, kind="EditMessageText")[-1]
+          if last_texts(S, kind="EditMessageText") else False)
+
+    # d) begona Pro testni yakunlay olmaydi
+    await dp.feed_update(bot, H.upd_call("su:pro:go", ali, priv))
+    ps = await db.active_session(101, "pro")
+    await dp.feed_update(bot, H.upd_call(f"pro:fin2:{ps['id']}", vali, priv))
+    check("begona yakunlay olmaydi", (await db.get_session(ps["id"]))["status"] == "active")
+    await dp.feed_update(bot, H.upd_message("/stop", ali, priv))
+    check("POLLS tozalanadi", len(classic.POLLS) <= 1, str(len(classic.POLLS)))
+
+    print("\n━━━ 15. RASMLI SAVOLLAR IMPORTI ━━━")
+    import zipfile
+    from PIL import Image, ImageDraw
+
+    def png(color, shape="rect"):
+        im = Image.new("RGB", (120, 120), "white")
+        d = ImageDraw.Draw(im)
+        (d.ellipse if shape == "circle" else d.rectangle)([20, 20, 100, 100], fill=color)
+        b = io.BytesIO(); im.save(b, "PNG"); return b.getvalue()
+
+    zbuf = io.BytesIO()
+    with zipfile.ZipFile(zbuf, "w") as z:
+        z.writestr("test/savollar.json", json.dumps({"questions": [
+            {"question": "Qaysi rang qizil?", "option_images": ["img/a.png", "img/b.png", "img/c.png"],
+             "answer": "B", "explanation": "B — qizil"},
+            {"question": "Rasmdagi shakl?", "image": "img/q.png",
+             "options": ["Doira", "Kvadrat", "Uchburchak"], "answer": 0},
+        ]}))
+        z.writestr("test/img/a.png", png("blue")); z.writestr("test/img/b.png", png("red"))
+        z.writestr("test/img/c.png", png("green")); z.writestr("test/img/q.png", png("black", "circle"))
+    zip_bytes = zbuf.getvalue()
+    photo_bytes = png("orange", "circle")
+
+    async def fake_download2(obj, *a, **k):
+        name = getattr(obj, "file_name", None) or ""
+        if name.endswith(".zip"):
+            return io.BytesIO(zip_bytes)
+        if isinstance(obj, types.PhotoSize) or isinstance(obj, str):
+            return io.BytesIO(photo_bytes)
+        return await fake_download(obj)
+    bot.download = fake_download2
+
+    await dp.feed_update(bot, H.upd_call("lib:new", ali, priv))
+    await dp.feed_update(bot, H.upd_message("Rasmli baza", ali, priv))
+    icol = (await db.get_prefs(101))["collection_id"]
+    zdoc = types.Document(file_id="fz", file_unique_id="uz", file_name="rasmli.zip", file_size=5000)
+    await dp.feed_update(bot, H.upd_message("", ali, priv, document=zdoc))
+    prev = [t for t in S.messages.values() if "Tahlil natijasi" in t][-1]
+    check("zip tahlil qilindi", "2</b> ta savol" in prev and "Rasmli savollar" in prev, prev[:300])
+    zmid = [m for k, m, _ in S.calls if k == "EditMessageText"][-1].message_id
+    await dp.feed_update(bot, H.upd_call("lib:save", ali, priv, zmid))
+    check("zip saqlandi", await db.count_questions(icol) == 2, str(await db.count_questions(icol)))
+    ids = await db.pick_questions(icol, 0, shuffle=False)
+    qs = await db.questions_by_ids(ids)
+    q1 = qs[ids[0]]
+    check("variant rasmlari saqlandi", len(q1["option_images"]) == 3
+          and all(media.is_local(x) for x in q1["option_images"]) and q1["correct"] == 1)
+    check("savol rasmi saqlandi", media.is_local(qs[ids[1]]["image"]))
+
+    # rasm + izoh bilan savol
+    await dp.feed_update(bot, H.upd_call(f"lib:addto:{icol}", ali, priv))
+    ph = [types.PhotoSize(file_id="phot1", file_unique_id="pu1", width=120, height=120)]
+    await dp.feed_update(bot, H.upd_message("Bu qanday shakl?\n+Doira\n-Kvadrat\n-Romb", ali, priv,
+                                            photo=ph))
+    pmid2 = [m for k, m, _ in S.calls if k == "EditMessageText"][-1].message_id
+    await dp.feed_update(bot, H.upd_call("lib:save", ali, priv, pmid2))
+    check("rasm+izoh savoli qo'shildi", await db.count_questions(icol) == 3,
+          str(await db.count_questions(icol)))
+
+    # ichki tarmoq havolasi rad etiladi (SSRF himoyasi)
+    import importers
+    from handlers import library as lib_h
+    bad = importers.ImportResult(questions=[{"text": "x", "options": ["a", "b"], "correct": 0,
+                                             "image": "http://127.0.0.1/secret.png"}])
+    check("ichki manzildan rasm olinmaydi", not await lib_h._materialize(bad, 101))
+
+    # Pro rejimda rasmli savollar
+    await db.set_pref(101, "count", 0)
+    n_calls = len(S.calls)
+    await dp.feed_update(bot, H.upd_call(f"lib:run:{icol}:pro", ali, priv))
+    rs = await db.active_session(101, "pro")
+    check("pro rasmli sessiya", rs is not None and len(rs["q_ids"]) == 3)
+    cur = last_sent()
+    for i, qid in enumerate(rs["q_ids"]):
+        q = await db.question(qid)
+        corr = rs["settings"]["perm"][i].index(q["correct"])
+        await dp.feed_update(bot, H.upd_call(f"pro:a:{rs['id']}:{i}:{corr}", ali, priv, cur))
+        cur = last_sent()
+    kinds = [k for k, _, _ in S.calls[n_calls:]]
+    check("pro: rasm yuborildi", kinds.count("SendPhoto") >= 1)
+    check("pro: natija chiqdi", "3 / 3" in S.messages[cur], S.messages[cur][:120])
+
+    # Klassik rejim: rasm + harfli poll
+    await db.set_pref(101, "timer", 10)
+    n_polls = len(S.polls)
+    n_calls = len(S.calls)
+    await dp.feed_update(bot, H.upd_call(f"lib:run:{icol}:classic", ali, priv))
+    await asyncio.sleep(2.2)
+    new_polls = list(S.polls.values())[n_polls:]
+    check("klassik: poll chiqdi", bool(new_polls))
+    kinds = [k for k, _, _ in S.calls[n_calls:]]
+    check("klassik: savol rasmi poll'dan oldin", "SendPhoto" in kinds
+          and kinds.index("SendPhoto") < kinds.index("SendPoll") if "SendPoll" in kinds else False)
+    img_polls = [p for p in new_polls if [o if isinstance(o, str) else o.text for o in p.options]
+                 == ["A", "B", "C"]]
+    first = await db.question((await db.active_session(101, "classic"))["q_ids"][0])
+    if media.has_option_images(first):
+        check("rasmli variantlar — harfli poll", bool(img_polls))
+    await dp.feed_update(bot, H.upd_message("/stop", ali, priv))
+    await asyncio.sleep(0.2)
 
     await db.execute("DELETE FROM answers WHERE user_id IN (101,102,103)")
     await db.execute("DELETE FROM sessions WHERE owner_id IN (101,102,103)")

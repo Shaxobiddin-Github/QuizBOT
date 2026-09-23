@@ -15,6 +15,10 @@ DB_PATH = BASE_DIR / os.getenv("DB_PATH", "data/quiz.db")
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 SEED_FILE = BASE_DIR / "data" / "default_questions.json"
+
+# Savol rasmlari (generatsiya qilingan IQ rasmlari va foydalanuvchi yuklaganlari)
+MEDIA_DIR = BASE_DIR / os.getenv("MEDIA_DIR", "data/media")
+MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 SEED_TITLE = "Psixologiya va Pedagogika"
 
 ADMINS = {int(x) for x in os.getenv("ADMINS", "").replace(" ", "").split(",") if x.isdigit()}

@@ -21,12 +21,13 @@ WELCOME = (
     "👥 <b>Guruhda</b> ikkala rejim ham jamoaviy ishlaydi: botni guruhga qo'shib "
     "<code>/quiz</code> yoki <code>/pro</code> yozing — qatnashchilar yig'iladi, "
     "hamma birga yechadi, oxirida umumiy reyting chiqadi.\n"
-    "🧩 <b>IQ test</b> — vaqt cheklangan mantiqiy test: ketma-ketliklar, analogiya, "
-    "mantiqiy masalalar. Qiyin savol ko'proq ball keltiradi, oxirida bo'limlar "
-    "bo'yicha tahlil chiqadi.\n\n"
+    "🧩 <b>IQ test</b> — standart tuzilmadagi test: rasmli matritsalar (Raven uslubi), "
+    "ketma-ketliklar, analogiya, mantiqiy masalalar. Natija IQ shkalasida "
+    "(o'rtacha 100), persentil va ishonch oralig'i bilan.\n\n"
     "🔐 Har kim <b>o'z bazasini</b> yaratadi: savollaringizni faqat siz ko'rasiz, "
     "xohlasangiz tanlagan guruhingizga yoki hammaga ochasiz.\n"
-    "➕ Savollarni <b>JSON</b> yoki <b>Word (.docx)</b> fayl orqali qo'shasiz.\n\n"
+    "➕ Savollarni <b>JSON</b>, <b>Word (.docx)</b> yoki <b>ZIP</b> (rasmli) fayl orqali "
+    "qo'shasiz — savol va javoblarda rasm bo'lishi mumkin.\n\n"
     "Quyidagi tugmalardan birini tanlang 👇"
 )
 
@@ -51,6 +52,9 @@ HELP = (
     "  \"answer\":0}]</pre>\n"
     "<pre>[{\"q\":\"Savol?\",\"c\":\"to'g'ri\",\n"
     "  \"a\":[\"xato\",\"xato\"]}]</pre>\n\n"
+    "<code>ZIP</code> — rasmli savollar: .json + rasmlar "
+    "(<code>\"image\"</code>, <code>\"option_images\"</code>).\n"
+    "🖼 Yoki rasm yuboring va izohiga savol bilan variantlarni yozing.\n\n"
     "<code>Word (.docx)</code> — taniladigan ko'rinishlar:\n"
     "<pre>1. Savol matni?\n"
     "+To'g'ri javob\n"
@@ -109,9 +113,8 @@ async def cmd_stop(message: types.Message, state: FSMContext) -> None:
     from handlers import classic
     await state.clear()
     session = await db.active_session(message.from_user.id)
-    await db.abort_active(message.from_user.id)
+    await classic.stop_private(message.from_user.id)
     if session:
-        classic.cancel_runner(session["id"])
         await message.answer("⏹ Joriy test to'xtatildi.", reply_markup=ui.menu_for(message.chat))
     else:
         await message.answer("Hozir faol test yo'q.", reply_markup=ui.menu_for(message.chat))

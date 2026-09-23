@@ -1,6 +1,7 @@
 """Bazalar (savollar to'plami), import/eksport."""
 from __future__ import annotations
 
+import asyncio
 import contextlib
 
 from aiogram import F, Router, types
@@ -12,6 +13,7 @@ from aiogram.fsm.state import State, StatesGroup
 import access
 import db
 import importers
+import media
 import ui
 
 router = Router(name="library")
@@ -118,7 +120,8 @@ async def _render_collection(call: types.CallbackQuery, col_id: int) -> None:
         rows.append([("⬆️ Savol qo'shish", f"lib:addto:{col_id}"),
                      ("⬇️ JSON eksport", f"lib:export:{col_id}")])
         rows.append([("🔐 Kim ko'ra oladi?", f"lib:perm:{col_id}")])
-        rows.append([("🗑 Bazani o'chirish", f"lib:del:{col_id}")])
+        if not col["is_default"]:
+            rows.append([("🗑 Bazani o'chirish", f"lib:del:{col_id}")])
     else:
         rows.append([("⬇️ JSON eksport", f"lib:export:{col_id}")])
     rows.append([("⬅️ Ro'yxat", "lib:list")])
@@ -237,6 +240,9 @@ async def cb_del(call: types.CallbackQuery) -> None:
     if not col or col["owner_id"] != call.from_user.id:
         await call.answer("O'chirishni faqat baza egasi qila oladi.", show_alert=True)
         return
+    if col["is_default"]:
+        await call.answer("Asosiy (default) bazani o'chirib bo'lmaydi.", show_alert=True)
+        return
     await call.message.edit_text(
         "🗑 Bu bazani va undagi barcha savollarni o'chirishni tasdiqlaysizmi?",
         reply_markup=ui.kb([[("✅ Ha, o'chir", f"lib:del2:{col_id}"),
@@ -251,7 +257,9 @@ async def cb_del2(call: types.CallbackQuery, state: FSMContext) -> None:
     if not col or col["owner_id"] != call.from_user.id:
         await call.answer("O'chirishni faqat baza egasi qila oladi.", show_alert=True)
         return
-    await db.delete_collection(col_id)
+    if not await db.delete_collection(col_id):
+        await call.answer("Asosiy (default) bazani o'chirib bo'lmaydi.", show_alert=True)
+        return
     prefs = await db.get_prefs(call.from_user.id)
     if prefs["collection_id"] == col_id:
         await db.set_pref(call.from_user.id, "collection_id", await db.default_collection_id())
@@ -311,9 +319,14 @@ def _upload_hint() -> str:
         "yoki <code>[{\"q\":\"…\",\"c\":\"to'g'ri\",\"a\":[\"xato\",…]}]</code>\n"
         "• <b>.docx</b> — Word fayl. To'g'ri javob <code>+</code> bilan belgilansa "
         "yoki <code>Javob: B</code> satri bo'lsa aniq o'qiydi.\n"
-        "• <b>.txt</b> — xuddi shu ko'rinishdagi oddiy matn\n\n"
+        "• <b>.txt</b> — xuddi shu ko'rinishdagi oddiy matn\n"
+        "• <b>.zip</b> — rasmli savollar: ichida .json va rasmlar, masalan "
+        "<code>{\"question\":\"…\",\"image\":\"1.png\",\"option_images\":"
+        "[\"a.png\",\"b.png\",\"c.png\"],\"answer\":\"B\"}</code>\n\n"
         "Yoki savollarni shu yerga <b>matn ko'rinishida</b> yozib yuboring:\n"
-        "<pre>1. Poytaxt qaysi shahar?\n+Toshkent\n-Samarqand\n-Buxoro</pre>"
+        "<pre>1. Poytaxt qaysi shahar?\n+Toshkent\n-Samarqand\n-Buxoro</pre>\n"
+        "🖼 <b>Rasmli savol</b>: rasm yuboring va izohiga (caption) savol bilan "
+        "variantlarni xuddi shunday yozing."
     )
 
 
@@ -384,11 +397,11 @@ async def _own_collection(user_id: int) -> int:
 
 
 @router.message(StateFilter(Lib.wait_file), F.document)
-@router.message(F.document)
+@router.message(F.document, F.chat.type == "private")
 async def on_document(message: types.Message, state: FSMContext) -> None:
     doc = message.document
     name = (doc.file_name or "").lower()
-    if not name.endswith((".json", ".docx", ".doc", ".txt", ".md")):
+    if not name.endswith((".json", ".zip", ".docx", ".doc", ".txt", ".md")):
         return
     if doc.file_size and doc.file_size > MAX_FILE:
         await message.answer("❌ Fayl juda katta (20 MB dan oshmasin).")
@@ -411,12 +424,85 @@ async def on_document(message: types.Message, state: FSMContext) -> None:
         await status.edit_text(f"❌ Faylni o'qib bo'lmadi: <code>{ui.esc(exc)}</code>")
         return
 
+    if not await _materialize(result, message.from_user.id):
+        await status.edit_text("❌ Rasmli savollarning rasmlarini yuklab bo'lmadi.")
+        return
     await _preview(status, state, result, col_id, source=doc.file_name)
+
+
+async def _materialize(result: importers.ImportResult, user_id: int) -> bool:
+    """Savollardagi rasm havolalarini (ZIP ichidagi fayl, URL) serverga saqlab,
+    nisbiy yo'lga almashtiradi. Rasmi yuklanmagan savol tashlab yuboriladi."""
+    done: dict[str, str] = {}
+
+    async def store(ref: str) -> str:
+        if ref in done:
+            return done[ref]
+        if ref.startswith("zip://"):
+            raw = result.files[ref]
+        elif media.is_url(ref):
+            raw = await media.fetch_url(ref)
+        elif media.is_local(ref):
+            return ref
+        else:
+            raise ValueError(f"rasm topilmadi: {ref}")
+        done[ref] = await asyncio.to_thread(media.store_image, raw, user_id)
+        return done[ref]
+
+    kept, bad = [], 0
+    for q in result.questions:
+        try:
+            if q.get("image"):
+                q["image"] = await store(q["image"])
+            if q.get("option_images"):
+                q["option_images"] = [await store(r) for r in q["option_images"]]
+            kept.append(q)
+        except Exception:
+            bad += 1
+    result.files.clear()
+    if bad:
+        result.skipped += bad
+        result.notes.append(f"⚠️ {bad} ta savolning rasmi yuklanmadi — o'tkazib yuborildi.")
+    result.questions = kept
+    return bool(kept)
+
+
+@router.message(StateFilter(Lib.wait_file), F.photo)
+async def on_photo(message: types.Message, state: FSMContext) -> None:
+    """Rasm + izoh (caption) = bitta rasmli savol."""
+    caption = (message.caption or "").strip()
+    if not caption:
+        await message.answer(
+            "🖼 Rasmning izohiga (caption) savol va variantlarni yozing:\n"
+            "<pre>Rasmda nechta uchburchak bor?\n+5\n-4\n-6</pre>")
+        return
+    try:
+        result = importers.parse_txt(caption.encode("utf-8"))
+    except importers.ImportError_ as exc:
+        await message.answer(f"❌ {ui.esc(exc)}")
+        return
+    if result.count != 1:
+        await message.answer("🖼 Bitta rasmga bitta savol yozing (variantlari bilan).")
+        return
+    buf = await message.bot.download(message.photo[-1])
+    try:
+        rel = await asyncio.to_thread(media.store_image, buf.read(), message.from_user.id)
+    except ValueError as exc:
+        await message.answer(f"❌ {ui.esc(exc)}")
+        return
+    result.questions[0]["image"] = rel
+    data = await state.get_data()
+    col_id = data.get("col_id")
+    col = await db.collection(col_id) if col_id else None
+    if not col or col["owner_id"] != message.from_user.id:
+        col_id = await _own_collection(message.from_user.id)
+    status = await message.answer("⏳ Tahlil qilinmoqda…")
+    await _preview(status, state, result, col_id, source="rasm")
 
 
 @router.message(StateFilter(Lib.wait_file), F.text, ~F.text.startswith("/"))
 async def on_text_block(message: types.Message, state: FSMContext) -> None:
-    if message.text in {ui.BTN_CLASSIC, ui.BTN_PRO, ui.BTN_LIB, ui.BTN_ADD,
+    if message.text in {ui.BTN_CLASSIC, ui.BTN_PRO, ui.BTN_IQ, ui.BTN_LIB, ui.BTN_ADD,
                         ui.BTN_STATS, ui.BTN_SETTINGS, ui.BTN_HELP}:
         await state.clear()
         return
@@ -449,8 +535,13 @@ async def _preview(status: types.Message, state: FSMContext,
     lines.append(f"\n📚 Qo'shiladigan baza: <b>{ui.esc(col['title'])}</b>")
     lines.append("\n<b>Namuna:</b>")
     for q in result.questions[:2]:
-        lines.append(f"\n<b>{ui.esc(ui.shorten(q['text'], 150))}</b>")
-        lines.append(ui.render_options(q["options"], correct=q["correct"], reveal=True))
+        pic = "🖼 " if q.get("image") else ""
+        lines.append(f"\n<b>{pic}{ui.esc(ui.shorten(q['text'], 150))}</b>")
+        if q.get("option_images"):
+            lines.append(f"🖼 Variantlar: {len(q['option_images'])} ta rasm · "
+                         f"to'g'ri javob: <b>{ui.LETTERS[q['correct']]}</b>")
+        else:
+            lines.append(ui.render_options(q["options"], correct=q["correct"], reveal=True))
     body = "\n".join(lines)
     await status.edit_text(
         body[:4000],

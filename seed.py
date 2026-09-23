@@ -1,6 +1,7 @@
 """Default bazani (artifactdagi savollar) bir marta yuklash."""
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 
@@ -42,7 +43,7 @@ async def ensure_default() -> None:
 
 
 async def ensure_iq() -> None:
-    """IQ savollar bazasini yuklash (hamma uchun ochiq)."""
+    """IQ savollar bazasi: matnli savollar (JSON) + rasmli Raven matritsalari."""
     iq_file = config.BASE_DIR / "data" / "iq_questions.json"
     if not iq_file.exists():
         return
@@ -60,3 +61,9 @@ async def ensure_iq() -> None:
     added, dup = await db.add_questions(col_id, result.questions)
     if added:
         log.info("IQ bazasi yuklandi: +%s ta savol (takror: %s)", added, dup)
+
+    import iq_gen
+    bank = await asyncio.to_thread(iq_gen.build_bank, config.MEDIA_DIR)
+    added, dup = await db.add_questions(col_id, bank)
+    if added:
+        log.info("Rasmli IQ savollari: +%s ta (takror: %s)", added, dup)

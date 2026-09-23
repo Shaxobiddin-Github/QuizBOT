@@ -116,6 +116,12 @@ CREATE TABLE IF NOT EXISTS prefs (
     instant       INTEGER DEFAULT 1,
     skip_learned  INTEGER DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS media_cache (
+    key        TEXT PRIMARY KEY,
+    file_id    TEXT NOT NULL,
+    created_at TEXT
+);
 """
 
 _conn: aiosqlite.Connection | None = None
@@ -125,8 +131,12 @@ def now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def fingerprint(text: str, options: Sequence[str]) -> str:
+def fingerprint(text: str, options: Sequence[str], image: str = "",
+                option_images: Sequence[str] = ()) -> str:
     raw = text.strip().lower() + "||" + "|".join(sorted(o.strip().lower() for o in options))
+    if image or option_images:
+        # rasmli savollarda matn bir xil bo'lishi mumkin — rasmlar ham hisobga olinadi
+        raw += "||img:" + image + "|" + "|".join(option_images)
     return hashlib.sha1(raw.encode("utf-8")).hexdigest()
 
 
@@ -162,7 +172,8 @@ async def _migrate(conn: aiosqlite.Connection) -> None:
         qcols = {r["name"] for r in await cur.fetchall()}
     for col, ddl in (("difficulty", "INTEGER DEFAULT 2"),
                      ("category", "TEXT DEFAULT ''"),
-                     ("image", "TEXT DEFAULT ''")):
+                     ("image", "TEXT DEFAULT ''"),
+                     ("option_images", "TEXT DEFAULT ''")):
         if col not in qcols:
             await conn.execute(f"ALTER TABLE questions ADD COLUMN {col} {ddl}")
     async with conn.execute("PRAGMA table_info(users)") as cur:
@@ -338,6 +349,23 @@ async def touch_chat(chat_id: int, title: str, kind: str) -> None:
         (chat_id, title or "", kind, now(), now()))
 
 
+async def touch_group(chat_id: int, title: str, kind: str, user_id: int | None) -> None:
+    """Guruh va a'zoni bitta tranzaksiyada belgilash (middleware uchun)."""
+    conn = await connect()
+    ts = now()
+    await conn.execute(
+        """INSERT INTO chats(chat_id, title, type, added_at, last_seen) VALUES(?,?,?,?,?)
+           ON CONFLICT(chat_id) DO UPDATE SET
+             title=excluded.title, type=excluded.type, last_seen=excluded.last_seen""",
+        (chat_id, title or "", kind, ts, ts))
+    if user_id is not None:
+        await conn.execute(
+            """INSERT INTO chat_members(chat_id, user_id, last_seen) VALUES(?,?,?)
+               ON CONFLICT(chat_id, user_id) DO UPDATE SET last_seen=excluded.last_seen""",
+            (chat_id, user_id, ts))
+    await conn.commit()
+
+
 async def touch_chat_member(chat_id: int, user_id: int) -> None:
     await execute(
         """INSERT INTO chat_members(chat_id, user_id, last_seen) VALUES(?,?,?)
@@ -390,9 +418,15 @@ async def collections_for_chat(chat_id: int, kind: str = "quiz") -> list[aiosqli
            ORDER BY c.is_default DESC, c.id""", (kind, chat_id))
 
 
-async def delete_collection(col_id: int) -> None:
+async def delete_collection(col_id: int) -> bool:
+    """Default baza hech qachon o'chirilmaydi (savollari ham)."""
+    col = await collection(col_id)
+    if not col or col["is_default"]:
+        return False
     await execute("DELETE FROM questions WHERE collection_id=?", (col_id,))
-    await execute("DELETE FROM collections WHERE id=? AND is_default=0", (col_id,))
+    await execute("DELETE FROM collection_shares WHERE collection_id=?", (col_id,))
+    await execute("DELETE FROM collections WHERE id=?", (col_id,))
+    return True
 
 
 # ---------------------------------------------------------------- questions
@@ -402,17 +436,19 @@ async def add_questions(col_id: int, items: Sequence[dict]) -> tuple[int, int]:
     added = dup = 0
     for it in items:
         opts = [str(o).strip() for o in it["options"]]
-        fp = fingerprint(it["text"], opts)
+        image = (it.get("image") or "")[:512]
+        opt_images = [str(x) for x in (it.get("option_images") or [])]
+        fp = fingerprint(it["text"], opts, image, opt_images)
         try:
             await conn.execute(
                 """INSERT INTO questions(collection_id, text, options, correct,
                                          explanation, difficulty, category, image,
-                                         fingerprint, created_at)
-                   VALUES(?,?,?,?,?,?,?,?,?,?)""",
+                                         option_images, fingerprint, created_at)
+                   VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
                 (col_id, it["text"].strip(), json.dumps(opts, ensure_ascii=False),
                  int(it["correct"]), (it.get("explanation") or "").strip(),
                  int(it.get("difficulty") or 2), (it.get("category") or "")[:60],
-                 (it.get("image") or "")[:256], fp, now()),
+                 image, json.dumps(opt_images) if opt_images else "", fp, now()),
             )
             added += 1
         except aiosqlite.IntegrityError:
@@ -451,7 +487,18 @@ def _q_to_dict(row: aiosqlite.Row) -> dict:
         "difficulty": (row["difficulty"] if "difficulty" in keys else 2) or 2,
         "category": (row["category"] if "category" in keys else "") or "",
         "image": (row["image"] if "image" in keys else "") or "",
+        "option_images": json.loads(row["option_images"])
+        if "option_images" in keys and row["option_images"] else [],
     }
+
+
+def make_perm(q: dict, shuffle: bool = True) -> list[int]:
+    """Variantlar tartibi. Variantlari rasm bo'lgan savolda tartib o'zgarmaydi —
+    harflar rasmdagi yozuvlarga mos kelishi kerak."""
+    order = list(range(len(q["options"])))
+    if shuffle and not q.get("option_images"):
+        random.shuffle(order)
+    return order
 
 
 async def pick_questions(col_id: int, limit: int, user_id: int | None = None,
@@ -524,7 +571,8 @@ async def finish_session(sid: int, status: str = "done") -> None:
 
 
 async def active_session(owner_id: int, mode: str | None = None) -> dict | None:
-    sql = "SELECT id FROM sessions WHERE owner_id=? AND status='active'"
+    """Foydalanuvchining shaxsiy chatdagi faol testi (guruh o'yinlari kirmaydi)."""
+    sql = "SELECT id FROM sessions WHERE owner_id=? AND chat_id=owner_id AND status='active'"
     params: list[Any] = [owner_id]
     if mode:
         sql += " AND mode=?"
@@ -534,9 +582,19 @@ async def active_session(owner_id: int, mode: str | None = None) -> dict | None:
     return await get_session(row["id"]) if row else None
 
 
+async def private_active_ids(owner_id: int) -> list[int]:
+    rows = await fetch_all(
+        "SELECT id FROM sessions WHERE owner_id=? AND chat_id=owner_id AND status='active'",
+        (owner_id,))
+    return [r["id"] for r in rows]
+
+
 async def abort_active(owner_id: int) -> None:
+    """Faqat shaxsiy chatdagi testlarni yopadi — foydalanuvchi tashkil qilgan
+    guruh o'yiniga tegmaydi (guruh sessiyasida chat_id — guruh id'si)."""
     await execute(
-        "UPDATE sessions SET status='aborted', finished_at=? WHERE owner_id=? AND status='active'",
+        """UPDATE sessions SET status='aborted', finished_at=?
+           WHERE owner_id=? AND chat_id=owner_id AND status='active'""",
         (now(), owner_id))
 
 
@@ -603,7 +661,9 @@ async def user_stats(user_id: int) -> dict:
 async def weak_questions(user_id: int, limit: int = 30) -> list[int]:
     rows = await fetch_all(
         """SELECT question_id, SUM(CASE WHEN is_correct=0 THEN 1 ELSE 0 END) AS bad
-           FROM answers WHERE user_id=? GROUP BY question_id
+           FROM answers WHERE user_id=?
+             AND session_id NOT IN (SELECT id FROM sessions WHERE mode='iq')
+           GROUP BY question_id
            HAVING bad > 0 ORDER BY bad DESC, MAX(created_at) DESC LIMIT ?""",
         (user_id, limit))
     return [r["question_id"] for r in rows]
@@ -631,3 +691,16 @@ async def global_top(limit: int = 15) -> list[aiosqlite.Row]:
            GROUP BY a.user_id HAVING total >= 10
            ORDER BY (SUM(a.is_correct)*1.0/COUNT(*)) DESC, total DESC LIMIT ?""",
         (limit,))
+
+
+# ---------------------------------------------------------------- media keshi
+async def media_get(key: str) -> str | None:
+    row = await fetch_one("SELECT file_id FROM media_cache WHERE key=?", (key,))
+    return row["file_id"] if row else None
+
+
+async def media_put(key: str, file_id: str) -> None:
+    await execute(
+        """INSERT INTO media_cache(key, file_id, created_at) VALUES(?,?,?)
+           ON CONFLICT(key) DO UPDATE SET file_id=excluded.file_id""",
+        (key, file_id, now()))

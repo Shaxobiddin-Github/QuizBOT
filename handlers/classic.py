@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import random
 import time
 
 from aiogram import Bot, F, Router, types
@@ -12,6 +11,7 @@ from aiogram.exceptions import TelegramBadRequest
 import access
 import config
 import db
+import media
 import ui
 
 router = Router(name="classic")
@@ -31,6 +31,16 @@ def cancel_runner(session_id: int) -> None:
     EVENTS.pop(session_id, None)
 
 
+async def stop_private(user_id: int) -> None:
+    """Foydalanuvchining shaxsiy chatdagi barcha faol testlarini to'xtatadi.
+    Guruhdagi o'yinlar (u tashkilotchi bo'lsa ham) davom etadi."""
+    from handlers import pro
+    for sid in await db.private_active_ids(user_id):
+        cancel_runner(sid)
+        pro.forget(sid)
+    await db.abort_active(user_id)
+
+
 async def start_quiz(message: types.Message, user: types.User) -> None:
     col_id = await access.ensure_collection(message.bot, user.id)
     prefs = await db.get_prefs(user.id)
@@ -40,7 +50,7 @@ async def start_quiz(message: types.Message, user: types.User) -> None:
             "yarating yoki guruhdoshingizdan o'z bazasini shu guruhga ochishni so'rang.")
         return
 
-    await db.abort_active(user.id)
+    await stop_private(user.id)
     q_ids = await db.pick_questions(
         col_id, prefs["count"], user.id,
         skip_learned=bool(prefs["skip_learned"]), shuffle=bool(prefs["shuffle_q"]))
@@ -48,7 +58,10 @@ async def start_quiz(message: types.Message, user: types.User) -> None:
         await message.answer("Mos savol topilmadi. Sozlamalarni o'zgartirib ko'ring.")
         return
 
-    settings = {"timer": prefs["timer"], "shuffle_a": prefs["shuffle_a"]}
+    questions = await db.questions_by_ids(q_ids)
+    q_ids = [q for q in q_ids if q in questions]
+    perm = [db.make_perm(questions[q], bool(prefs["shuffle_a"])) for q in q_ids]
+    settings = {"timer": prefs["timer"], "shuffle_a": prefs["shuffle_a"], "perm": perm}
     sid = await db.create_session(user.id, message.chat.id, col_id, "classic", q_ids, settings)
 
     col = await db.collection(col_id)
@@ -85,26 +98,26 @@ async def _run(bot: Bot, sid: int, is_group: bool) -> None:
             if not q:
                 continue
 
-            options = list(q["options"])
-            order = list(range(len(options)))
-            if shuffle_a:
-                random.shuffle(order)
-            shown = [options[i] for i in order]
+            perm = session["settings"].get("perm")
+            order = perm[index] if perm else db.make_perm(q, shuffle_a)
+            shown = [q["options"][i] for i in order]
             correct = order.index(q["correct"])
-
-            await _send_question(bot, chat_id, sid, index, len(q_ids), q, shown,
-                                 correct, timer)
-            await db.set_cursor(sid, index + 1)
 
             event = asyncio.Event()
             EVENTS[sid] = event
-            if is_group:
-                await asyncio.sleep(timer + 1)
-            else:
-                with contextlib.suppress(asyncio.TimeoutError):
-                    await asyncio.wait_for(event.wait(), timeout=timer + 2)
-                await asyncio.sleep(1.2)
-            EVENTS.pop(sid, None)
+            poll_id = await _send_question(bot, chat_id, sid, index, len(q_ids), q, shown,
+                                           correct, timer)
+            await db.set_cursor(sid, index + 1)
+            try:
+                if is_group:
+                    await asyncio.sleep(timer + 1)
+                else:
+                    with contextlib.suppress(asyncio.TimeoutError):
+                        await asyncio.wait_for(event.wait(), timeout=timer + 2)
+                    await asyncio.sleep(1.2)
+            finally:
+                EVENTS.pop(sid, None)
+                POLLS.pop(poll_id, None)
 
         await db.finish_session(sid)
         await _show_results(bot, sid, is_group)
@@ -121,24 +134,31 @@ async def _run(bot: Bot, sid: int, is_group: bool) -> None:
 
 
 async def _send_question(bot: Bot, chat_id: int, sid: int, index: int, total: int,
-                         q: dict, shown: list[str], correct: int, timer: int) -> None:
+                         q: dict, shown: list[str], correct: int, timer: int) -> str:
     header = f"❓ {index + 1}/{total}"
+    img_opts = media.has_option_images(q)
     long_opts = any(len(o) > config.POLL_OPTION_LIMIT for o in shown)
     long_text = len(q["text"]) > config.POLL_QUESTION_LIMIT
+    photo = await media.photo_for(bot, q)
 
-    if long_opts or long_text:
-        body = (f"{header}\n\n<b>{ui.esc(q['text'])}</b>\n\n"
-                + ui.render_options(shown)
+    if photo or long_opts or long_text:
+        # Savol (va rasm) alohida xabarda, poll'da faqat harflar
+        from handlers import iq
+        body = (f"{header}\n\n" + iq.question_body(q, shown)
                 + "\n\n<i>Javobni quyidagi so'rovnomadan tanlang 👇</i>")
-        await bot.send_message(chat_id, body)
+        await media.send(bot, chat_id, body, None, photo)
         poll_question = f"{header} — yuqoridagi savol"
-        poll_options = [f"{ui.LETTERS[i]}) {ui.shorten(o, config.POLL_OPTION_LIMIT - 4)}"
-                        for i, o in enumerate(shown)]
+        if img_opts:
+            poll_options = list(ui.LETTERS[:len(shown)])
+        else:
+            poll_options = [f"{ui.LETTERS[i]}) {ui.shorten(o, config.POLL_OPTION_LIMIT - 4)}"
+                            for i, o in enumerate(shown)]
     else:
         poll_question = ui.shorten(f"{header}  {q['text']}", config.POLL_QUESTION_LIMIT)
         poll_options = [ui.shorten(o, config.POLL_OPTION_LIMIT) for o in shown]
 
-    explanation = q.get("explanation") or f"To'g'ri javob: {shown[correct]}"
+    right = ui.LETTERS[correct] if img_opts else shown[correct]
+    explanation = q.get("explanation") or f"To'g'ri javob: {right}"
     msg = await bot.send_poll(
         chat_id=chat_id,
         question=poll_question,
@@ -153,6 +173,7 @@ async def _send_question(bot: Bot, chat_id: int, sid: int, index: int, total: in
         "sid": sid, "index": index, "qid": q["id"],
         "correct": correct, "sent_at": time.monotonic(),
     }
+    return msg.poll.id
 
 
 @router.poll_answer()

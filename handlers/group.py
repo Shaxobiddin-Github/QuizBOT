@@ -3,16 +3,15 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import random
 import time
 
 from aiogram import Bot, F, Router, types
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command
 
-import access
 import config
 import db
+import media
 import ui
 
 router = Router(name="group")
@@ -75,7 +74,8 @@ async def open_lobby(message: types.Message, mode: str) -> None:
         "owner_id": message.from_user.id,
         "owner_name": message.from_user.full_name,
         "col_id": col_id,
-        "count": prefs["count"] or 10,
+        # 0 — «barchasi»; None bo'lsa standart 10 ta
+        "count": prefs["count"] if prefs["count"] is not None else 10,
         "timer": prefs["timer"] or 20,
         "players": {},
         "msg_id": None,
@@ -339,11 +339,7 @@ async def launch(bot: Bot, chat_id: int, lobby: dict) -> None:
 
     questions = await db.questions_by_ids(q_ids)
     q_ids = [q for q in q_ids if q in questions]
-    perm = []
-    for qid in q_ids:
-        order = list(range(len(questions[qid]["options"])))
-        random.shuffle(order)
-        perm.append(order)
+    perm = [db.make_perm(questions[qid]) for qid in q_ids]
 
     settings = {"timer": lobby["timer"], "shuffle_a": 1, "perm": perm,
                 "players": lobby["players"], "group": 1}
@@ -412,21 +408,21 @@ async def _run_battle(bot: Bot, chat_id: int, sid: int) -> None:
                 "timer": timer, "registered": players,
                 "names": dict(players), "answers": {},
                 "start": time.monotonic(), "event": asyncio.Event(),
-                "last_edit": 0.0, "msg_id": None,
+                "last_edit": 0.0, "msg_id": None, "q": q, "photo": False,
             }
-            BATTLE[(sid, index)] = ctx
-            msg = await bot.send_message(chat_id, _battle_card(ctx),
-                                         reply_markup=_battle_kb(ctx))
+            photo = await media.photo_for(bot, q)
+            msg = await media.send(bot, chat_id, _battle_card(ctx), _battle_kb(ctx), photo)
             ctx["msg_id"] = msg.message_id
+            ctx["photo"] = bool(getattr(msg, "photo", None))
+            ctx["start"] = time.monotonic()          # rasm yuklanishi vaqtga qo'shilmasin
+            BATTLE[(sid, index)] = ctx
 
             with contextlib.suppress(asyncio.TimeoutError):
                 await asyncio.wait_for(ctx["event"].wait(), timeout=timer)
 
             BATTLE.pop((sid, index), None)
-            with contextlib.suppress(TelegramBadRequest):
-                await bot.edit_message_text(
-                    _battle_card(ctx, revealed=True), chat_id=chat_id,
-                    message_id=ctx["msg_id"], reply_markup=None)
+            await media.edit_card(bot, chat_id, ctx["msg_id"], ctx["photo"],
+                                  _battle_card(ctx, revealed=True))
             await db.set_cursor(sid, index + 1)
             if index < total - 1:
                 await asyncio.sleep(3)
@@ -439,29 +435,38 @@ async def _run_battle(bot: Bot, chat_id: int, sid: int) -> None:
         with contextlib.suppress(Exception):
             await bot.send_message(chat_id, f"⚠️ Xatolik: <code>{ui.esc(exc)}</code>")
         await db.finish_session(sid, "error")
+    finally:
+        for key in [k for k in BATTLE if k[0] == sid]:
+            BATTLE.pop(key, None)
 
 
 def _battle_card(ctx: dict, revealed: bool = False) -> str:
     head = (f"🧠 <b>Pro jang</b>  ·  savol <b>{ctx['index'] + 1}/{ctx['total']}</b>"
             f"  ·  ⏱ {ctx['timer']} s\n")
-    body = f"\n<b>{ui.esc(ctx['text'])}</b>\n\n"
+    q = ctx.get("q") or {}
+    img_opts = media.has_option_images(q)
+    limit = 500 if media.has_media(q) else 3000
+    body = f"\n<b>{ui.esc(ui.shorten(ctx['text'], limit))}</b>\n\n"
+    right = (ui.LETTERS[ctx["correct"]] if img_opts else
+             f"{ui.LETTERS[ctx['correct']]}) {ui.esc(ui.shorten(ctx['shown'][ctx['correct']], 200))}")
     if revealed:
-        body += ui.render_options(ctx["shown"], correct=ctx["correct"], reveal=True)
+        if not img_opts:
+            body += ui.render_options(ctx["shown"], correct=ctx["correct"], reveal=True)
         good, bad = [], []
         for uid, (opt, _spent) in ctx["answers"].items():
             name = ctx["names"].get(uid, "?")
             (good if opt == ctx["correct"] else bad).append(name)
-        body += (f"\n\n✅ <b>To'g'ri javob:</b> "
-                 f"{ui.LETTERS[ctx['correct']]}) {ui.esc(ctx['shown'][ctx['correct']])}")
+        body += f"\n\n✅ <b>To'g'ri javob:</b> {right}"
         if ctx["explanation"]:
-            body += f"\n💡 <i>{ui.esc(ctx['explanation'])}</i>"
+            body += f"\n💡 <i>{ui.esc(ui.shorten(ctx['explanation'], 250))}</i>"
         body += f"\n\n👥 Javob berganlar: <b>{len(ctx['answers'])}</b>"
         if good:
             body += f"\n🎯 Topganlar: {', '.join(ui.esc(n) for n in good[:15])}"
         if bad:
             body += f"\n❌ Adashganlar: {', '.join(ui.esc(n) for n in bad[:15])}"
     else:
-        body += ui.render_options(ctx["shown"])
+        body += ("<i>🖼 Javob variantlari rasmda</i>" if img_opts
+                 else ui.render_options(ctx["shown"]))
         body += (f"\n\n👥 Javob berganlar: <b>{len(ctx['answers'])}</b>"
                  + (f"/{len(ctx['registered'])}" if ctx["registered"] else "")
                  + "\n<i>Javobni tanlang — kim tez javob bersa, ko'proq ball oladi.</i>")
@@ -488,6 +493,9 @@ async def cb_battle_answer(call: types.CallbackQuery) -> None:
         return
 
     opt = int(opt)
+    if not 0 <= opt < len(ctx["shown"]):
+        await call.answer()
+        return
     spent = int((time.monotonic() - ctx["start"]) * 1000)
     name = call.from_user.first_name or call.from_user.full_name
     ctx["names"].setdefault(uid, name)
@@ -506,10 +514,8 @@ async def cb_battle_answer(call: types.CallbackQuery) -> None:
     now = time.monotonic()
     if now - ctx["last_edit"] > 1.2:
         ctx["last_edit"] = now
-        with contextlib.suppress(TelegramBadRequest):
-            await call.bot.edit_message_text(
-                _battle_card(ctx), chat_id=ctx["chat_id"],
-                message_id=ctx["msg_id"], reply_markup=_battle_kb(ctx))
+        await media.edit_card(call.bot, ctx["chat_id"], ctx["msg_id"], ctx["photo"],
+                              _battle_card(ctx), _battle_kb(ctx))
 
 
 async def _battle_results(bot: Bot, chat_id: int, sid: int, timer: int,
