@@ -33,7 +33,7 @@ def _clean(text: str) -> str:
 
 
 def _normalize(text: str, options: list[str], correct: int,
-               explanation: str = "") -> dict | None:
+               explanation: str = "", extra: dict | None = None) -> dict | None:
     text = _clean(text)
     opts, seen = [], set()
     correct_value = options[correct] if 0 <= correct < len(options) else None
@@ -50,12 +50,17 @@ def _normalize(text: str, options: list[str], correct: int,
         idx = opts.index(_clean(correct_value)) if correct_value else 0
     except ValueError:
         return None
-    return {
+    item = {
         "text": text[:1000],
         "options": opts,
         "correct": idx,
         "explanation": _clean(explanation)[:500],
     }
+    if extra:
+        for key in ("difficulty", "category", "image"):
+            if extra.get(key) not in (None, ""):
+                item[key] = extra[key]
+    return item
 
 
 # ----------------------------------------------------------------------- JSON
@@ -122,6 +127,9 @@ def _json_item(item) -> dict | None:
             return _normalize(str(text), texts, correct, str(explanation))
 
         options = [str(o) for o in options]
+        extra = {"difficulty": lower.get("difficulty") or lower.get("daraja"),
+                 "category": lower.get("category") or lower.get("bolim"),
+                 "image": lower.get("image")}
         ans = _first(lower, ["answer", "correct", "correct_option_id", "correct_index",
                              "javob", "right"])
         correct = 0
@@ -140,7 +148,7 @@ def _json_item(item) -> dict | None:
                            if _clean(o).lower() == _clean(s).lower()]
                 correct = matches[0] if matches else 0
         correct = max(0, min(correct, len(options) - 1))
-        return _normalize(str(text), options, correct, str(explanation))
+        return _normalize(str(text), options, correct, str(explanation), extra)
     return None
 
 
@@ -374,6 +382,8 @@ def to_json_export(title: str, questions: list[dict]) -> str:
         {"title": title,
          "questions": [
              {"question": q["text"], "options": q["options"],
-              "answer": q["correct"], "explanation": q.get("explanation", "")}
+              "answer": q["correct"], "explanation": q.get("explanation", ""),
+              **({"category": q["category"]} if q.get("category") else {}),
+              **({"difficulty": q["difficulty"]} if q.get("difficulty") else {})}
              for q in questions]},
         ensure_ascii=False, indent=2)

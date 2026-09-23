@@ -29,7 +29,7 @@ def btns(s, kind="SendMessage"):
 
 
 async def main():
-    await db.connect(); await seed.ensure_default()
+    await db.connect(); await seed.ensure_default(); await seed.ensure_iq()
     bot, dp, S = H.make(ROUTERS)
     ali, vali, sardor = H.user(101, "Ali"), H.user(102, "Vali"), H.user(103, "Sardor")
     priv, grp = H.chat(101), H.chat(-1001, "supergroup", "Test guruh")
@@ -357,6 +357,58 @@ async def main():
     check("to'g'ri guruhga", bool(copies) and copies[-1].chat_id == -1002)
     check("hisobot chiqdi", "Yuborish tugadi" in S.messages.get(cmid, ""),
           S.messages.get(cmid, "")[:100])
+
+    print("\n━━━ 12. IQ TEST ━━━")
+    from handlers import iq as iq_h
+    iqcol = await iq_h.iq_collection()
+    check("IQ bazasi yuklandi", iqcol is not None and await db.count_questions(iqcol) >= 50,
+          str(await db.count_questions(iqcol)) if iqcol else "yo'q")
+    quiz_vis = {c["id"] for c in await access.visible_collections(bot, 101)}
+    check("IQ bazasi oddiy ro'yxatda yo'q", iqcol not in quiz_vis)
+
+    await dp.feed_update(bot, H.upd_message("🧩 IQ test", ali, priv))
+    check("IQ qoidalari", "IQ test" in last_texts(S)[-1] and "daqiqa" in last_texts(S)[-1])
+    check("ogohlantirish bor", "rasmiy" in last_texts(S)[-1].lower())
+    await dp.feed_update(bot, H.upd_call("iq:go", ali, priv))
+    iqmid = S.calls[-1][2].message_id
+    check("IQ savol kartasi", "IQ test" in S.messages[iqmid] and "⏳" in S.messages[iqmid],
+          S.messages[iqmid][:100])
+    iqs = await db.active_session(101, "iq")
+    check("IQ sessiyasi", iqs is not None and len(iqs["q_ids"]) == iq_h.QUESTION_COUNT,
+          str(len(iqs["q_ids"])) if iqs else "yo'q")
+
+    iqsid = iqs["id"]
+    iqqs = await db.questions_by_ids(iqs["q_ids"])
+    diffs = [iqqs[q]["difficulty"] for q in iqs["q_ids"]]
+    check("osondan qiyinga tartiblangan", diffs == sorted(diffs), str(diffs))
+
+    # hammasiga to'g'ri javob beramiz
+    for i, qid in enumerate(iqs["q_ids"]):
+        order = iqs["settings"]["perm"][i]
+        corr = order.index(iqqs[qid]["correct"])
+        await dp.feed_update(bot, H.upd_call(f"iq:a:{iqsid}:{i}:{corr}", ali, priv, iqmid))
+    res = S.messages[iqmid]
+    check("IQ natija chiqdi", "IQ test yakunlandi" in res, res[:100])
+    check("maksimal ball ~140", "<b>140</b>" in res, res[:300])
+    check("bo'limlar tahlili", "Bo'limlar bo'yicha" in res)
+    check("natijada ogohlantirish", "Rasmiy" in res or "rasmiy" in res)
+    await dp.feed_update(bot, H.upd_call(f"iq:rev:{iqsid}:0", ali, priv, iqmid))
+    check("javoblar tahlili", "Javoblar tahlili" in S.messages[iqmid])
+
+    # vaqt tugashi
+    await dp.feed_update(bot, H.upd_call("iq:go", vali, H.chat(102)))
+    vmid = S.calls[-1][2].message_id
+    vs = await db.active_session(102, "iq")
+    past = (__import__("datetime").datetime.now(__import__("datetime").timezone.utc)
+            - __import__("datetime").timedelta(minutes=1)).isoformat(timespec="seconds")
+    st = dict(vs["settings"]); st["deadline"] = past
+    await db.execute("UPDATE sessions SET settings=? WHERE id=?",
+                     (json.dumps(st, ensure_ascii=False), vs["id"]))
+    await dp.feed_update(bot, H.upd_call(f"iq:a:{vs['id']}:0:0", vali, H.chat(102), vmid))
+    vs2 = await db.get_session(vs["id"])
+    check("vaqt tugagach yakunlanadi", vs2["status"] in ("timeout", "done"), vs2["status"])
+    check("vaqt tugagach natija", "IQ test yakunlandi" in S.messages[vmid],
+          S.messages[vmid][:80])
 
     await db.execute("DELETE FROM answers WHERE user_id IN (101,102,103)")
     await db.execute("DELETE FROM sessions WHERE owner_id IN (101,102,103)")

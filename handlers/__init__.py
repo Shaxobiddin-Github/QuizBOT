@@ -1,4 +1,4 @@
-from . import admin, group, menu, setup, classic, pro, library  # noqa: F401
+from . import admin, group, menu, setup, iq, classic, pro, library  # noqa: F401
 
 ROUTERS = [admin.router, group.router, menu.router, setup.router,
-           classic.router, pro.router, library.router]
+           iq.router, classic.router, pro.router, library.router]

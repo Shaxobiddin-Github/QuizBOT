@@ -1,0 +1,683 @@
+{
+ "title": "IQ test — mantiq va zakovat",
+ "kind": "iq",
+ "description": "52 ta mantiqiy savol: ketma-ketliklar, analogiya, mantiq",
+ "questions": [
+  {
+   "question": "2, 4, 8, 16, ? — keyingi son?",
+   "options": [
+    "32",
+    "24",
+    "20",
+    "30"
+   ],
+   "answer": 0,
+   "category": "Sonlar ketma-ketligi",
+   "difficulty": 1,
+   "explanation": "Har safar 2 ga ko'paytiriladi."
+  },
+  {
+   "question": "1, 4, 9, 16, ? — keyingi son?",
+   "options": [
+    "25",
+    "20",
+    "24",
+    "36"
+   ],
+   "answer": 0,
+   "category": "Sonlar ketma-ketligi",
+   "difficulty": 1,
+   "explanation": "Kvadratlar: 1², 2², 3², 4², 5²."
+  },
+  {
+   "question": "5, 10, 20, 40, ? — keyingi son?",
+   "options": [
+    "80",
+    "60",
+    "70",
+    "100"
+   ],
+   "answer": 0,
+   "category": "Sonlar ketma-ketligi",
+   "difficulty": 1,
+   "explanation": "Har safar 2 ga ko'payadi."
+  },
+  {
+   "question": "81, 27, 9, ? — keyingi son?",
+   "options": [
+    "3",
+    "6",
+    "1",
+    "4"
+   ],
+   "answer": 0,
+   "category": "Sonlar ketma-ketligi",
+   "difficulty": 1,
+   "explanation": "Har safar 3 ga bo'linadi."
+  },
+  {
+   "question": "4, 9, 16, 25, ? — keyingi son?",
+   "options": [
+    "36",
+    "30",
+    "35",
+    "49"
+   ],
+   "answer": 0,
+   "category": "Sonlar ketma-ketligi",
+   "difficulty": 1,
+   "explanation": "2², 3², 4², 5², 6²."
+  },
+  {
+   "question": "7, 14, 28, 56, ? — keyingi son?",
+   "options": [
+    "112",
+    "98",
+    "102",
+    "120"
+   ],
+   "answer": 0,
+   "category": "Sonlar ketma-ketligi",
+   "difficulty": 1,
+   "explanation": "Har safar 2 ga ko'payadi."
+  },
+  {
+   "question": "3, 6, 11, 18, ? — keyingi son?",
+   "options": [
+    "27",
+    "25",
+    "26",
+    "28"
+   ],
+   "answer": 0,
+   "category": "Sonlar ketma-ketligi",
+   "difficulty": 2,
+   "explanation": "Farqlar: +3, +5, +7, +9."
+  },
+  {
+   "question": "1, 1, 2, 3, 5, 8, ? — keyingi son?",
+   "options": [
+    "13",
+    "11",
+    "12",
+    "14"
+   ],
+   "answer": 0,
+   "category": "Sonlar ketma-ketligi",
+   "difficulty": 2,
+   "explanation": "Fibonachchi: oldingi ikkitasining yig'indisi."
+  },
+  {
+   "question": "100, 50, 25, ? — keyingi son?",
+   "options": [
+    "12,5",
+    "15",
+    "20",
+    "10"
+   ],
+   "answer": 0,
+   "category": "Sonlar ketma-ketligi",
+   "difficulty": 2,
+   "explanation": "Har safar 2 ga bo'linadi."
+  },
+  {
+   "question": "1, 8, 27, 64, ? — keyingi son?",
+   "options": [
+    "125",
+    "100",
+    "81",
+    "216"
+   ],
+   "answer": 0,
+   "category": "Sonlar ketma-ketligi",
+   "difficulty": 2,
+   "explanation": "Kublar: 1³, 2³, 3³, 4³, 5³."
+  },
+  {
+   "question": "2, 3, 5, 7, 11, ? — keyingi son?",
+   "options": [
+    "13",
+    "12",
+    "14",
+    "15"
+   ],
+   "answer": 0,
+   "category": "Sonlar ketma-ketligi",
+   "difficulty": 2,
+   "explanation": "Tub sonlar ketma-ketligi."
+  },
+  {
+   "question": "2, 6, 12, 20, 30, ? — keyingi son?",
+   "options": [
+    "42",
+    "40",
+    "36",
+    "44"
+   ],
+   "answer": 0,
+   "category": "Sonlar ketma-ketligi",
+   "difficulty": 3,
+   "explanation": "Farqlar: +4, +6, +8, +10, +12."
+  },
+  {
+   "question": "1, 2, 6, 24, ? — keyingi son?",
+   "options": [
+    "120",
+    "48",
+    "96",
+    "72"
+   ],
+   "answer": 0,
+   "category": "Sonlar ketma-ketligi",
+   "difficulty": 3,
+   "explanation": "×2, ×3, ×4, ×5 (faktorial)."
+  },
+  {
+   "question": "1, 3, 7, 15, 31, ? — keyingi son?",
+   "options": [
+    "63",
+    "47",
+    "55",
+    "62"
+   ],
+   "answer": 0,
+   "category": "Sonlar ketma-ketligi",
+   "difficulty": 3,
+   "explanation": "Har safar ×2 va +1."
+  },
+  {
+   "question": "2, 5, 10, 17, 26, ? — keyingi son?",
+   "options": [
+    "37",
+    "35",
+    "36",
+    "38"
+   ],
+   "answer": 0,
+   "category": "Sonlar ketma-ketligi",
+   "difficulty": 3,
+   "explanation": "n² + 1 ko'rinishida: 36+1=37."
+  },
+  {
+   "question": "A, C, E, G, ? — keyingi harf?",
+   "options": [
+    "I",
+    "H",
+    "J",
+    "K"
+   ],
+   "answer": 0,
+   "category": "Harflar ketma-ketligi",
+   "difficulty": 1,
+   "explanation": "Bittadan tashlab ketmoqda (+2)."
+  },
+  {
+   "question": "Z, X, V, T, ? — keyingi harf?",
+   "options": [
+    "R",
+    "S",
+    "Q",
+    "P"
+   ],
+   "answer": 0,
+   "category": "Harflar ketma-ketligi",
+   "difficulty": 2,
+   "explanation": "Orqaga qarab ikkitadan (−2)."
+  },
+  {
+   "question": "B, E, H, K, ? — keyingi harf?",
+   "options": [
+    "N",
+    "M",
+    "L",
+    "O"
+   ],
+   "answer": 0,
+   "category": "Harflar ketma-ketligi",
+   "difficulty": 2,
+   "explanation": "Har safar +3 harf."
+  },
+  {
+   "question": "A, B, D, G, K, ? — keyingi harf?",
+   "options": [
+    "P",
+    "N",
+    "O",
+    "M"
+   ],
+   "answer": 0,
+   "category": "Harflar ketma-ketligi",
+   "difficulty": 3,
+   "explanation": "Farqlar: +1, +2, +3, +4, +5."
+  },
+  {
+   "question": "Kitob : O'qish = Ovqat : ?",
+   "options": [
+    "Yeyish",
+    "Pishirish",
+    "Sotish",
+    "Sovutish"
+   ],
+   "answer": 0,
+   "category": "Analogiya",
+   "difficulty": 1,
+   "explanation": ""
+  },
+  {
+   "question": "Shifokor : Kasalxona = O'qituvchi : ?",
+   "options": [
+    "Maktab",
+    "Dars",
+    "Kitob",
+    "O'quvchi"
+   ],
+   "answer": 0,
+   "category": "Analogiya",
+   "difficulty": 1,
+   "explanation": ""
+  },
+  {
+   "question": "Oyoq : Poyabzal = Qo'l : ?",
+   "options": [
+    "Qo'lqop",
+    "Soat",
+    "Uzuk",
+    "Yeng"
+   ],
+   "answer": 0,
+   "category": "Analogiya",
+   "difficulty": 1,
+   "explanation": ""
+  },
+  {
+   "question": "Issiq : Sovuq = Yorug' : ?",
+   "options": [
+    "Qorong'i",
+    "Quyosh",
+    "Chiroq",
+    "Oq"
+   ],
+   "answer": 0,
+   "category": "Analogiya",
+   "difficulty": 1,
+   "explanation": ""
+  },
+  {
+   "question": "Baliq : Suv = Qush : ?",
+   "options": [
+    "Havo",
+    "Uya",
+    "Daraxt",
+    "Qanot"
+   ],
+   "answer": 0,
+   "category": "Analogiya",
+   "difficulty": 1,
+   "explanation": ""
+  },
+  {
+   "question": "Ko'z : Ko'rish = Quloq : ?",
+   "options": [
+    "Eshitish",
+    "Gapirish",
+    "Hidlash",
+    "Sezish"
+   ],
+   "answer": 0,
+   "category": "Analogiya",
+   "difficulty": 1,
+   "explanation": ""
+  },
+  {
+   "question": "Yozuvchi : Kitob = Rassom : ?",
+   "options": [
+    "Rasm",
+    "Mo'yqalam",
+    "Bo'yoq",
+    "Muzey"
+   ],
+   "answer": 0,
+   "category": "Analogiya",
+   "difficulty": 2,
+   "explanation": ""
+  },
+  {
+   "question": "Kuchukcha : It = Bola : ?",
+   "options": [
+    "Odam",
+    "Ota",
+    "Maktab",
+    "O'yin"
+   ],
+   "answer": 0,
+   "category": "Analogiya",
+   "difficulty": 2,
+   "explanation": ""
+  },
+  {
+   "question": "Soat : Vaqt = Tarozi : ?",
+   "options": [
+    "Og'irlik",
+    "Uzunlik",
+    "Hajm",
+    "Tezlik"
+   ],
+   "answer": 0,
+   "category": "Analogiya",
+   "difficulty": 2,
+   "explanation": ""
+  },
+  {
+   "question": "Archa : O'rmon = Qum : ?",
+   "options": [
+    "Cho'l",
+    "Dengiz",
+    "Tog'",
+    "Yo'l"
+   ],
+   "answer": 0,
+   "category": "Analogiya",
+   "difficulty": 3,
+   "explanation": ""
+  },
+  {
+   "question": "Ortiqchasini toping: olma, nok, sabzi, uzum",
+   "options": [
+    "Sabzi",
+    "Olma",
+    "Nok",
+    "Uzum"
+   ],
+   "answer": 0,
+   "category": "Ortiqchasini top",
+   "difficulty": 1,
+   "explanation": "Sabzi — sabzavot, qolganlari meva."
+  },
+  {
+   "question": "Ortiqchasini toping: it, mushuk, sigir, burgut",
+   "options": [
+    "Burgut",
+    "It",
+    "Mushuk",
+    "Sigir"
+   ],
+   "answer": 0,
+   "category": "Ortiqchasini top",
+   "difficulty": 1,
+   "explanation": "Burgut — qush, qolganlari sutemizuvchi."
+  },
+  {
+   "question": "Ortiqchasini toping: Toshkent, Samarqand, Buxoro, Qozog'iston",
+   "options": [
+    "Qozog'iston",
+    "Toshkent",
+    "Samarqand",
+    "Buxoro"
+   ],
+   "answer": 0,
+   "category": "Ortiqchasini top",
+   "difficulty": 1,
+   "explanation": "Qozog'iston — davlat, qolganlari shahar."
+  },
+  {
+   "question": "Ortiqchasini toping: pianino, gitara, skripka, bo'yoq",
+   "options": [
+    "Bo'yoq",
+    "Pianino",
+    "Gitara",
+    "Skripka"
+   ],
+   "answer": 0,
+   "category": "Ortiqchasini top",
+   "difficulty": 1,
+   "explanation": "Qolganlari — musiqa asboblari."
+  },
+  {
+   "question": "Ortiqchasini toping: 2, 3, 5, 9, 11",
+   "options": [
+    "9",
+    "2",
+    "5",
+    "11"
+   ],
+   "answer": 0,
+   "category": "Ortiqchasini top",
+   "difficulty": 2,
+   "explanation": "9 tub son emas (9 = 3×3)."
+  },
+  {
+   "question": "Ortiqchasini toping: kvadrat, doira, uchburchak, kub",
+   "options": [
+    "Kub",
+    "Kvadrat",
+    "Doira",
+    "Uchburchak"
+   ],
+   "answer": 0,
+   "category": "Ortiqchasini top",
+   "difficulty": 2,
+   "explanation": "Kub — hajmli shakl, qolganlari tekis."
+  },
+  {
+   "question": "Ortiqchasini toping: dekabr, yanvar, fevral, aprel",
+   "options": [
+    "Aprel",
+    "Dekabr",
+    "Yanvar",
+    "Fevral"
+   ],
+   "answer": 0,
+   "category": "Ortiqchasini top",
+   "difficulty": 2,
+   "explanation": "Qolganlari — qish oylari."
+  },
+  {
+   "question": "Ortiqchasini toping: 16, 25, 36, 40",
+   "options": [
+    "40",
+    "16",
+    "25",
+    "36"
+   ],
+   "answer": 0,
+   "category": "Ortiqchasini top",
+   "difficulty": 2,
+   "explanation": "40 — to'liq kvadrat emas."
+  },
+  {
+   "question": "Barcha gullar — o'simlik. Atirgul — gul. Demak atirgul:",
+   "options": [
+    "O'simlik",
+    "Faqat gul, o'simlik emas",
+    "Daraxt",
+    "Aniqlab bo'lmaydi"
+   ],
+   "answer": 0,
+   "category": "Mantiqiy masala",
+   "difficulty": 1,
+   "explanation": ""
+  },
+  {
+   "question": "Ali Validan katta, Vali Sardordan katta. Eng yoshi kim?",
+   "options": [
+    "Sardor",
+    "Ali",
+    "Vali",
+    "Ma'lum emas"
+   ],
+   "answer": 0,
+   "category": "Mantiqiy masala",
+   "difficulty": 2,
+   "explanation": "Ali > Vali > Sardor."
+  },
+  {
+   "question": "Soat roppa-rosa 3:00 da soat va daqiqa strelkalari orasidagi burchak?",
+   "options": [
+    "90°",
+    "30°",
+    "60°",
+    "120°"
+   ],
+   "answer": 0,
+   "category": "Mantiqiy masala",
+   "difficulty": 2,
+   "explanation": "Har bir soat oralig'i 30°, 3 ta oraliq = 90°."
+  },
+  {
+   "question": "5 ta mushuk 5 daqiqada 5 ta sichqon tutadi. 100 ta mushuk 100 ta sichqonni necha daqiqada tutadi?",
+   "options": [
+    "5 daqiqa",
+    "100 daqiqa",
+    "20 daqiqa",
+    "50 daqiqa"
+   ],
+   "answer": 0,
+   "category": "Mantiqiy masala",
+   "difficulty": 3,
+   "explanation": "Bitta mushuk bitta sichqonni 5 daqiqada tutadi."
+  },
+  {
+   "question": "Bugun seshanba. 100 kundan keyin hafta kuni qaysi bo'ladi?",
+   "options": [
+    "Payshanba",
+    "Chorshanba",
+    "Juma",
+    "Seshanba"
+   ],
+   "answer": 0,
+   "category": "Mantiqiy masala",
+   "difficulty": 3,
+   "explanation": "100 = 7×14 + 2, ya'ni 2 kun oldinga."
+  },
+  {
+   "question": "Qafasda tovuq va quyonlar bor: jami 10 ta bosh, 28 ta oyoq. Nechta quyon bor?",
+   "options": [
+    "4",
+    "5",
+    "6",
+    "3"
+   ],
+   "answer": 0,
+   "category": "Mantiqiy masala",
+   "difficulty": 3,
+   "explanation": "4 quyon (16 oyoq) + 6 tovuq (12 oyoq) = 28."
+  },
+  {
+   "question": "Bitta g'ishtning og'irligi — 1 kg va yarim g'isht. G'isht necha kg?",
+   "options": [
+    "2 kg",
+    "1,5 kg",
+    "1 kg",
+    "3 kg"
+   ],
+   "answer": 0,
+   "category": "Mantiqiy masala",
+   "difficulty": 4,
+   "explanation": "g = 1 + g/2 → g/2 = 1 → g = 2."
+  },
+  {
+   "question": "1/2 ning yarmi nechaga teng?",
+   "options": [
+    "1/4",
+    "1",
+    "1/3",
+    "2/4"
+   ],
+   "answer": 0,
+   "category": "Matematik mantiq",
+   "difficulty": 1,
+   "explanation": ""
+  },
+  {
+   "question": "20 sonining 50% i nechaga teng?",
+   "options": [
+    "10",
+    "5",
+    "15",
+    "20"
+   ],
+   "answer": 0,
+   "category": "Matematik mantiq",
+   "difficulty": 1,
+   "explanation": ""
+  },
+  {
+   "question": "Agar A > B va B > C bo'lsa, u holda:",
+   "options": [
+    "A > C",
+    "A < C",
+    "A = C",
+    "Aniqlab bo'lmaydi"
+   ],
+   "answer": 0,
+   "category": "Matematik mantiq",
+   "difficulty": 1,
+   "explanation": ""
+  },
+  {
+   "question": "Bir sonning 3 barobari 27 ga teng. Shu sonning yarmi nechaga teng?",
+   "options": [
+    "4,5",
+    "9",
+    "13,5",
+    "3"
+   ],
+   "answer": 0,
+   "category": "Matematik mantiq",
+   "difficulty": 2,
+   "explanation": "Son 9, uning yarmi 4,5."
+  },
+  {
+   "question": "7 × 8 − 6 : 2 = ?",
+   "options": [
+    "53",
+    "25",
+    "50",
+    "55"
+   ],
+   "answer": 0,
+   "category": "Matematik mantiq",
+   "difficulty": 2,
+   "explanation": "Avval ko'paytirish va bo'lish: 56 − 3 = 53."
+  },
+  {
+   "question": "2 soatning 25% i necha daqiqa?",
+   "options": [
+    "30",
+    "25",
+    "15",
+    "50"
+   ],
+   "answer": 0,
+   "category": "Matematik mantiq",
+   "difficulty": 2,
+   "explanation": "120 daqiqaning 25% i = 30."
+  },
+  {
+   "question": "3 ta olma 6000 so'm bo'lsa, 7 ta olma qancha?",
+   "options": [
+    "14000",
+    "12000",
+    "18000",
+    "21000"
+   ],
+   "answer": 0,
+   "category": "Matematik mantiq",
+   "difficulty": 2,
+   "explanation": "Bittasi 2000 so'm."
+  },
+  {
+   "question": "Narx 200 so'mdan 20% ga arzonlashdi. Yangi narx qancha?",
+   "options": [
+    "160",
+    "180",
+    "150",
+    "140"
+   ],
+   "answer": 0,
+   "category": "Matematik mantiq",
+   "difficulty": 2,
+   "explanation": "200 − 40 = 160."
+  }
+ ]
+}

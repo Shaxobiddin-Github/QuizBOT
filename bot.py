@@ -26,6 +26,7 @@ COMMANDS = [
     BotCommand(command="start", description="Bosh menyu"),
     BotCommand(command="quiz", description="🎯 Klassik rejim (QuizBot)"),
     BotCommand(command="pro", description="🧠 Pro rejim"),
+    BotCommand(command="iq", description="🧩 IQ test"),
     BotCommand(command="bazalar", description="📚 Bazalar"),
     BotCommand(command="qoshish", description="➕ Savol qo'shish"),
     BotCommand(command="stats", description="📊 Statistika"),
@@ -53,6 +54,7 @@ async def main() -> None:
 
     await db.connect()
     await seed.ensure_default()
+    await seed.ensure_iq()
 
     me = await bot.get_me()
     log.info("Bot ishga tushdi: @%s (id=%s)", me.username, me.id)

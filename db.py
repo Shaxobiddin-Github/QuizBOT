@@ -155,6 +155,16 @@ async def _migrate(conn: aiosqlite.Connection) -> None:
             "UPDATE collections SET visibility='public' WHERE is_default=1")
         await conn.execute(
             "UPDATE collections SET visibility='private' WHERE is_default=0")
+    if "kind" not in cols:
+        await conn.execute(
+            "ALTER TABLE collections ADD COLUMN kind TEXT DEFAULT 'quiz'")
+    async with conn.execute("PRAGMA table_info(questions)") as cur:
+        qcols = {r["name"] for r in await cur.fetchall()}
+    for col, ddl in (("difficulty", "INTEGER DEFAULT 2"),
+                     ("category", "TEXT DEFAULT ''"),
+                     ("image", "TEXT DEFAULT ''")):
+        if col not in qcols:
+            await conn.execute(f"ALTER TABLE questions ADD COLUMN {col} {ddl}")
     async with conn.execute("PRAGMA table_info(users)") as cur:
         ucols = {r["name"] for r in await cur.fetchall()}
     if "blocked" not in ucols:
@@ -261,12 +271,13 @@ async def default_collection_id() -> int | None:
 
 
 async def create_collection(title: str, owner_id: int | None, description: str = "",
-                            is_default: int = 0, visibility: str = "private") -> int:
+                            is_default: int = 0, visibility: str = "private",
+                            kind: str = "quiz") -> int:
     return await execute(
         "INSERT INTO collections(title, description, owner_id, is_default,"
-        " visibility, created_at) VALUES(?,?,?,?,?,?)",
+        " visibility, kind, created_at) VALUES(?,?,?,?,?,?,?)",
         (title.strip()[:120], description[:400], owner_id, is_default,
-         visibility, now()),
+         visibility, kind, now()),
     )
 
 
@@ -347,34 +358,36 @@ async def chat(chat_id: int) -> aiosqlite.Row | None:
     return await fetch_one("SELECT * FROM chats WHERE chat_id=?", (chat_id,))
 
 
-async def owned_collections(user_id: int) -> list[aiosqlite.Row]:
+async def owned_collections(user_id: int, kind: str = 'quiz') -> list[aiosqlite.Row]:
     return await fetch_all(
         """SELECT c.*, (SELECT COUNT(*) FROM questions q WHERE q.collection_id=c.id) AS n
-           FROM collections c WHERE c.owner_id=? ORDER BY c.id""", (user_id,))
+           FROM collections c WHERE c.owner_id=? AND COALESCE(c.kind,'quiz')=? ORDER BY c.id""", (user_id, kind))
 
 
-async def candidate_collections(user_id: int) -> list[aiosqlite.Row]:
+async def candidate_collections(user_id: int, kind: str = "quiz") -> list[aiosqlite.Row]:
     """O'zi egasi, ochiq, yoki guruhga ulashilgan bazalar (a'zolik keyin tekshiriladi)."""
     return await fetch_all(
         """SELECT c.*, (SELECT COUNT(*) FROM questions q WHERE q.collection_id=c.id) AS n
            FROM collections c
-           WHERE c.owner_id = ?
-              OR c.visibility = 'public'
-              OR (c.visibility = 'groups' AND EXISTS (
-                    SELECT 1 FROM collection_shares s WHERE s.collection_id = c.id))
+           WHERE COALESCE(c.kind,'quiz') = ?
+             AND (c.owner_id = ?
+                  OR c.visibility = 'public'
+                  OR (c.visibility = 'groups' AND EXISTS (
+                        SELECT 1 FROM collection_shares s WHERE s.collection_id = c.id)))
            ORDER BY (c.owner_id = ?) DESC, c.is_default DESC, c.id""",
-        (user_id, user_id))
+        (kind, user_id, user_id))
 
 
-async def collections_for_chat(chat_id: int) -> list[aiosqlite.Row]:
+async def collections_for_chat(chat_id: int, kind: str = "quiz") -> list[aiosqlite.Row]:
     """Guruhda o'ynash mumkin bo'lgan bazalar: ochiq yoki shu guruhga ulashilgan."""
     return await fetch_all(
         """SELECT c.*, (SELECT COUNT(*) FROM questions q WHERE q.collection_id=c.id) AS n
            FROM collections c
-           WHERE c.visibility = 'public'
-              OR EXISTS (SELECT 1 FROM collection_shares s
-                         WHERE s.collection_id = c.id AND s.chat_id = ?)
-           ORDER BY c.is_default DESC, c.id""", (chat_id,))
+           WHERE COALESCE(c.kind,'quiz') = ?
+             AND (c.visibility = 'public'
+                  OR EXISTS (SELECT 1 FROM collection_shares s
+                             WHERE s.collection_id = c.id AND s.chat_id = ?))
+           ORDER BY c.is_default DESC, c.id""", (kind, chat_id))
 
 
 async def delete_collection(col_id: int) -> None:
@@ -393,10 +406,13 @@ async def add_questions(col_id: int, items: Sequence[dict]) -> tuple[int, int]:
         try:
             await conn.execute(
                 """INSERT INTO questions(collection_id, text, options, correct,
-                                         explanation, fingerprint, created_at)
-                   VALUES(?,?,?,?,?,?,?)""",
+                                         explanation, difficulty, category, image,
+                                         fingerprint, created_at)
+                   VALUES(?,?,?,?,?,?,?,?,?,?)""",
                 (col_id, it["text"].strip(), json.dumps(opts, ensure_ascii=False),
-                 int(it["correct"]), (it.get("explanation") or "").strip(), fp, now()),
+                 int(it["correct"]), (it.get("explanation") or "").strip(),
+                 int(it.get("difficulty") or 2), (it.get("category") or "")[:60],
+                 (it.get("image") or "")[:256], fp, now()),
             )
             added += 1
         except aiosqlite.IntegrityError:
@@ -424,6 +440,7 @@ async def questions_by_ids(ids: Sequence[int]) -> dict[int, dict]:
 
 
 def _q_to_dict(row: aiosqlite.Row) -> dict:
+    keys = row.keys()
     return {
         "id": row["id"],
         "collection_id": row["collection_id"],
@@ -431,6 +448,9 @@ def _q_to_dict(row: aiosqlite.Row) -> dict:
         "options": json.loads(row["options"]),
         "correct": row["correct"],
         "explanation": row["explanation"] or "",
+        "difficulty": (row["difficulty"] if "difficulty" in keys else 2) or 2,
+        "category": (row["category"] if "category" in keys else "") or "",
+        "image": (row["image"] if "image" in keys else "") or "",
     }
 
 

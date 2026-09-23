@@ -4,10 +4,20 @@
 
 ## Rejimlar
 
-| | 🎯 Klassik | 🧠 Pro |
-|---|---|---|
-| Shaxsiy chat | Telegram quiz-poll, taymer, avtomatik keyingi savol | Bitta xabar ichida navigatsiya, 50:50, «o'rgandim», xatolar tahlili |
-| Guruh | Hamma poll'ga javob beradi, oxirida reyting | **Pro jang** — hamma bir vaqtda javob beradi, tezlik uchun bonus ball |
+| | 🎯 Klassik | 🧠 Pro | 🧩 IQ test |
+|---|---|---|---|
+| Shaxsiy chat | Telegram quiz-poll, taymer, avtomatik keyingi savol | Bitta xabar ichida navigatsiya, 50:50, «o'rgandim», xatolar tahlili | Vaqt cheklangan mantiq testi, qiyinlikka qarab ball |
+| Guruh | Hamma poll'ga javob beradi, oxirida reyting | **Pro jang** — hamma bir vaqtda javob beradi, tezlik uchun bonus ball | — |
+
+## 🧩 IQ test
+
+Uchinchi rejim — vaqt cheklangan mantiqiy test. 20 ta savol, 20 daqiqa, osondan
+qiyiniga. Bo'limlar: sonlar ketma-ketligi, harflar, analogiya, ortiqchasini top,
+mantiqiy masalalar, matematik mantiq (jami 52 ta savol bazada).
+
+Ball qiyinlik darajasiga qarab tortiladi (`⭐1`–`⭐4`), natija 70–140 oralig'idagi
+**taxminiy ko'rsatkich**ga aylantiriladi va bo'limlar bo'yicha tahlil beriladi.
+Natija sahifasida ochiq yozilgan: bu standartlashtirilgan IQ testi emas.
 
 ## 🔐 Ruxsatlar
 
@@ -44,7 +54,7 @@ ro'yxatdan o'tgan foydalanuvchi admin bo'ladi. O'z ID'ingizni bilish: `/id`.
 ./bot-ctl.sh stop       # to'xtatish
 ./bot-ctl.sh restart    # qayta ishga tushirish
 ./bot-ctl.sh log        # jonli log
-./bot-ctl.sh test       # 86 ta integratsion test
+./bot-ctl.sh test       # 100 ta integratsion test
 ```
 
 Bot **cron** nazorati ostida: har daqiqada tekshiriladi, o'chib qolsa
@@ -61,7 +71,7 @@ Nazoratni butunlay o'chirish: `crontab -e` → ikkala qatorni o'chiring.
 
 ## Buyruqlar
 
-**Shaxsiy:** `/start` `/quiz` `/pro` `/bazalar` `/qoshish` `/stats` `/stop` `/help` `/id`
+**Shaxsiy:** `/start` `/quiz` `/pro` `/iq` `/bazalar` `/qoshish` `/stats` `/stop` `/help` `/id`
 **Admin:** `/xabar` (ommaviy xabar), `/bekor`
 **Guruh:** `/quiz` `/pro` `/reyting` `/stop`
 
@@ -99,9 +109,12 @@ handlers/
   classic.py      1-rejim (quiz-poll)
   pro.py          2-rejim (inline interfeys)
   library.py      bazalar, import/eksport, ruxsatlar
+  iq.py           3-rejim (IQ test)
   admin.py        ommaviy xabar (broadcast)
 access.py         kirish huquqi, guruh a'zoligi keshi
-data/quiz.db      baza          data/default_questions.json  197 ta savol
+data/quiz.db      baza
+data/default_questions.json   197 ta test savoli
+data/iq_questions.json        52 ta IQ savoli
 tests/            integratsion testlar (soxta Telegram API)
 ```
 

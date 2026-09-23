@@ -39,3 +39,24 @@ async def ensure_default() -> None:
         )
     added, dup = await db.add_questions(col_id, result.questions)
     log.info("Default baza yuklandi: +%s ta savol (takror: %s)", added, dup)
+
+
+async def ensure_iq() -> None:
+    """IQ savollar bazasini yuklash (hamma uchun ochiq)."""
+    iq_file = config.BASE_DIR / "data" / "iq_questions.json"
+    if not iq_file.exists():
+        return
+    row = await db.fetch_one(
+        "SELECT id FROM collections WHERE COALESCE(kind,'quiz')='iq' ORDER BY id LIMIT 1")
+    payload = json.loads(iq_file.read_text(encoding="utf-8"))
+    if row:
+        col_id = row["id"]
+    else:
+        col_id = await db.create_collection(
+            payload.get("title", "IQ test"), owner_id=None,
+            description=payload.get("description", ""),
+            visibility="public", kind="iq")
+    result = importers.parse_json(json.dumps(payload, ensure_ascii=False))
+    added, dup = await db.add_questions(col_id, result.questions)
+    if added:
+        log.info("IQ bazasi yuklandi: +%s ta savol (takror: %s)", added, dup)

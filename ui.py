@@ -9,6 +9,7 @@ from aiogram.types import (InlineKeyboardButton, InlineKeyboardMarkup,
 LETTERS = "ABCDEFGHIJ"
 BTN_CLASSIC = "🎯 Klassik rejim"
 BTN_PRO = "🧠 Pro rejim"
+BTN_IQ = "🧩 IQ test"
 BTN_LIB = "📚 Bazalar"
 BTN_ADD = "➕ Savol qo'shish"
 BTN_STATS = "📊 Statistika"
@@ -20,9 +21,9 @@ def main_menu() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text=BTN_CLASSIC), KeyboardButton(text=BTN_PRO)],
-            [KeyboardButton(text=BTN_LIB), KeyboardButton(text=BTN_ADD)],
-            [KeyboardButton(text=BTN_STATS), KeyboardButton(text=BTN_SETTINGS)],
-            [KeyboardButton(text=BTN_HELP)],
+            [KeyboardButton(text=BTN_IQ), KeyboardButton(text=BTN_LIB)],
+            [KeyboardButton(text=BTN_ADD), KeyboardButton(text=BTN_STATS)],
+            [KeyboardButton(text=BTN_SETTINGS), KeyboardButton(text=BTN_HELP)],
         ],
         resize_keyboard=True,
         input_field_placeholder="Rejimni tanlang…",
